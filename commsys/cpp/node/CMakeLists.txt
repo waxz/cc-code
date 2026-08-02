@@ -17,6 +17,7 @@ commsys_add_executable(test_node_basic bench/test_node_basic.cpp)
 commsys_add_executable(test_node_udp_latest bench/test_node_udp_latest.cpp)
 commsys_add_executable(test_ring_stress bench/test_ring_stress.cpp)
 commsys_add_executable(benchmark_report bench/benchmark_report.cpp)
+commsys_add_executable(bench_cpu_affinity bench/bench_cpu_affinity.cpp)
 
 # A single target that runs every smoke test in sequence and fails
 # the build if any of them does -- this is what build.sh/benchmark.sh

@@ -53,4 +53,16 @@ echo >> "$OUT"
 rm -f /dev/shm/commsys_cpp_* 2>/dev/null || true
 "$BUILD_DIR/node/benchmark_report" >> "$OUT"
 
+echo >> "$OUT"
+echo "## CPU core affinity comparison" >> "$OUT"
+echo >> "$OUT"
+echo "Tests whether pinning the publisher and subscriber to dedicated CPU" >> "$OUT"
+echo "cores (sched_setaffinity) reduces scheduling-contention tail latency," >> "$OUT"
+echo "compared to leaving scheduling up to the OS default. On a single-core" >> "$OUT"
+echo "machine this is structurally a no-op (nothing to isolate from)." >> "$OUT"
+echo '```' >> "$OUT"
+rm -f /dev/shm/commsys_cpp_* 2>/dev/null || true
+"$BUILD_DIR/node/bench_cpu_affinity" >> "$OUT" 2>&1
+echo '```' >> "$OUT"
+
 echo "== wrote $OUT =="

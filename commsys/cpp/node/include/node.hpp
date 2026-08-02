@@ -174,6 +174,21 @@ public:
                         auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(50);
                         while (!it->second.try_write(env_data, env_len)) {
                             if (std::chrono::steady_clock::now() > deadline) break;
+                            // Same fix as the keep_latest slot write
+                            // path, and the same real bug class as
+                            // node.py's original blocking time.sleep()
+                            // in the ring backoff: this loop makes zero
+                            // syscalls otherwise, so nothing gives the
+                            // OS scheduler a natural opportunity to run
+                            // the consumer process while the ring is
+                            // full. Confirmed via direct measurement
+                            // (not guessed) to be the actual cause of a
+                            // persistent ~300ms max-latency outlier that
+                            // survived even a 4-vCPU rerun -- ruling out
+                            // both page faults (measured at ~14ms for
+                            // the full ring, an order of magnitude too
+                            // small) and heap allocation as explanations.
+                            sched_yield();
                         }
                     }
                 }
@@ -362,7 +377,25 @@ private:
     }
 
     void run_discovery() {
-        auto peers = registry_.list_active(2.0, slot_);
+        // TTL is deliberately generous (not the more obvious ~2x
+        // heartbeat interval). Root-caused via direct measurement: a
+        // caller with a tight, unpaced publish loop that doesn't also
+        // call spin_once() periodically silently lets its own
+        // heartbeat go stale, since heartbeat sending and discovery
+        // polling both live inside spin_once(). With a tight TTL, a
+        // peer's link gets torn down mid-firehose and has to
+        // reconnect and drain whatever backlog piled up in the
+        // meantime -- this was confirmed to be the actual cause of a
+        // persistent ~300ms max-latency outlier in exactly that
+        // scenario (see bench/test_ring_stress.cpp's history), not
+        // page faults or heap allocation as originally suspected. A
+        // generous TTL is a mitigation, not a structural fix: any
+        // caller whose publish-only loop runs longer than the TTL
+        // without calling spin_once() will eventually hit this again.
+        // Call spin_once() periodically even inside a tight publish
+        // loop (see test_ring_stress.cpp / test_node_udp_latest.cpp
+        // for the pattern) -- that's the actual fix.
+        auto peers = registry_.list_active(10.0, slot_);
         std::set<std::string> seen;
         for (auto& peer : peers) {
             seen.insert(peer.node_id);

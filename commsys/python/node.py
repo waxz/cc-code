@@ -49,7 +49,20 @@ ENVELOPE_FMT = "!H I Q H"  # topic_len(uint16), seq(uint32), send_ns(uint64), se
 ENVELOPE_HDR = struct.calcsize(ENVELOPE_FMT)
 DISCOVERY_POLL_INTERVAL = 0.15
 HEARTBEAT_INTERVAL = 0.5
-DISCOVERY_TTL = 2.0
+# Deliberately generous, not ~2x HEARTBEAT_INTERVAL. Root-caused (via
+# the C++ port, then confirmed to apply here too) as a real mitigation
+# for a common usage trap: a tight, unpaced publish loop that never
+# actually awaits anything (the fast path through _async_ring_write()
+# when the ring isn't full never hits an await asyncio.sleep(), so it
+# never yields to the event loop) can starve the independent
+# _heartbeat_loop() task of scheduling turns for the loop's whole
+# duration. With a tight TTL, that reads as the publisher having died,
+# tearing down an otherwise-healthy link mid-firehose. A generous TTL
+# is a mitigation, not a structural fix -- a publish loop that runs
+# longer than the TTL without ever yielding will eventually hit this
+# again; the actual fix is for any long-running tight loop to await
+# something (even asyncio.sleep(0)) periodically.
+DISCOVERY_TTL = 10.0
 
 # UDP has no framing of its own beyond one packet == one send() call, and
 # a raw datagram over ~65507B either fails outright (as it does with
