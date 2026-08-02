@@ -18,7 +18,11 @@ full benchmark comparison.
   part shown to actually have a latency bottleneck worth porting).
   See [`cpp/CPP_PORT_REPORT.md`](cpp/CPP_PORT_REPORT.md) for the full
   benchmark comparison and bottleneck analysis against the Python
-  version, including two real bugs the port caught along the way.
+  version, including two real bugs the port caught along the way, and
+  [`cpp/node/API_GUIDE.md`](cpp/node/API_GUIDE.md) for how to actually
+  use `Node` in new code -- typed messages, construction options, the
+  event-loop-driving footgun that caused a real ~300ms latency bug,
+  and error handling.
 - **`cpp/bench_reference/`** — standalone microbenchmarks (raw struct
   packing, FlatBuffers, ring buffer bandwidth, TCC JIT) used earlier
   to evaluate whether C++ was worth the port before committing to it.

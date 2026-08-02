@@ -152,8 +152,32 @@ public:
         }
     }
 
-    ~DiscoveryRegistry() {
-        if (slots_) munmap(slots_, sizeof(NodeSlot) * CAPACITY);
+    ~DiscoveryRegistry() { release(); }
+
+    // Holds a raw mmap pointer with a non-trivial destructor (munmap).
+    // The compiler-generated copy constructor would shallow-copy that
+    // pointer and double-munmap on destruction of either copy -- a
+    // real bug, not a theoretical one, since Node embeds a
+    // DiscoveryRegistry as a member and anything that copies or
+    // reallocates a Node (e.g. std::vector<Node> growing) would have
+    // silently hit this. Move is safe and cheap (just transfers the
+    // pointer), so support that instead.
+    DiscoveryRegistry(const DiscoveryRegistry&) = delete;
+    DiscoveryRegistry& operator=(const DiscoveryRegistry&) = delete;
+
+    DiscoveryRegistry(DiscoveryRegistry&& other) noexcept
+        : name_(std::move(other.name_)), slots_(other.slots_), my_slot_(other.my_slot_) {
+        other.slots_ = nullptr;
+    }
+    DiscoveryRegistry& operator=(DiscoveryRegistry&& other) noexcept {
+        if (this != &other) {
+            release();
+            name_ = std::move(other.name_);
+            slots_ = other.slots_;
+            my_slot_ = other.my_slot_;
+            other.slots_ = nullptr;
+        }
+        return *this;
     }
 
     int register_node(const std::string& node_id, const std::string& host, uint32_t port,
@@ -214,6 +238,11 @@ public:
     }
 
 private:
+    void release() {
+        if (slots_) munmap(slots_, sizeof(NodeSlot) * CAPACITY);
+        slots_ = nullptr;
+    }
+
     std::string name_;
     NodeSlot* slots_ = nullptr;
     int my_slot_ = -1;

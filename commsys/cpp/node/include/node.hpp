@@ -29,12 +29,15 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "discovery.hpp"
 #include "ring_buffer.hpp"
 #include "latest_value_slot.hpp"
+#include "message_traits.hpp"
 
 namespace commsys {
 
@@ -115,10 +118,67 @@ struct SubStats {
 
 using Callback = std::function<void(const uint8_t*, uint32_t)>;
 
+// All exceptions thrown directly by Node (as opposed to exceptions
+// that might propagate up from things it calls, like std::bad_alloc)
+// use this type, so callers can catch commsys errors specifically
+// without also catching unrelated standard-library exceptions.
+class NodeError : public std::runtime_error {
+public:
+    explicit NodeError(const std::string& what) : std::runtime_error(what) {}
+};
+
+// Construction options for Node, grouped into one struct instead of a
+// long positional parameter list. Every field has a sensible default,
+// so `Node("my_node")` alone is a complete, valid construction --
+// override only the fields that matter for a given use case, e.g.:
+//
+//   Node n("lidar_node", {.force_transport = "shm",
+//                          .shm_ring_capacity = 32 << 20});
+//
+// (designated initializers, C++20; for C++17 use
+//  NodeOptions opts; opts.force_transport = "shm"; Node n("id", opts);)
+struct NodeOptions {
+    std::string host = "127.0.0.1";
+    uint16_t udp_port = 0;          // 0 = let the OS pick a free port
+    std::string force_transport;     // "", "shm", or "udp"; "" = auto-select per peer
+
+    // Shared-memory link sizing. See node.hpp's design notes and
+    // cpp/CPP_PORT_REPORT.md for why the defaults are what they are:
+    // large enough to hold a burst of the biggest realistic message
+    // (a LiDAR-scan-sized payload) without the publisher spending most
+    // of its time backoff-spinning waiting for the subscriber to
+    // drain, but not so large that first-touch page faults on a
+    // freshly created ring become their own cost.
+    uint64_t shm_ring_capacity = 16 << 20;
+    uint64_t shm_slot_capacity = 1 << 20;
+
+    // Override only for test isolation (running multiple independent
+    // "networks" of nodes in the same process/test suite) or if you
+    // deliberately want a private discovery domain. Nodes with
+    // different registry_name values cannot discover each other.
+    std::string registry_name = REGISTRY_NAME;
+};
+
 class Node {
 public:
-    Node(std::string node_id, std::string host = "127.0.0.1", uint16_t udp_port = 0,
-         std::string force_transport = "", uint64_t shm_ring_capacity = 16 << 20,
+    /// Preferred constructor: see NodeOptions for what each field
+    /// means and its default. `node_id` must be unique across every
+    /// node sharing the same discovery domain (registry_name) --
+    /// two nodes registering with the same id will overwrite each
+    /// other's discovery record.
+    Node(std::string node_id, const NodeOptions& options = {})
+        : node_id_(std::move(node_id)), host_(options.host), force_transport_(options.force_transport),
+          shm_ring_capacity_(options.shm_ring_capacity), shm_slot_capacity_(options.shm_slot_capacity),
+          registry_(options.registry_name) {
+        udp_port_requested_ = options.udp_port;
+    }
+
+    /// Legacy positional constructor, kept for existing call sites.
+    /// Prefer the NodeOptions overload for new code -- it's harder to
+    /// accidentally pass an argument in the wrong position (e.g.
+    /// registry_name where you meant shm_slot_capacity).
+    Node(std::string node_id, std::string host, uint16_t udp_port,
+         std::string force_transport, uint64_t shm_ring_capacity = 16 << 20,
          uint64_t shm_slot_capacity = 1 << 20, const std::string& registry_name = REGISTRY_NAME)
         : node_id_(std::move(node_id)), host_(std::move(host)), force_transport_(std::move(force_transport)),
           shm_ring_capacity_(shm_ring_capacity), shm_slot_capacity_(shm_slot_capacity),
@@ -126,8 +186,91 @@ public:
         udp_port_requested_ = udp_port;
     }
 
+    Node(const Node&) = delete;
+    Node& operator=(const Node&) = delete;
+
+    // A defaulted move would be wrong here, not just suboptimal: this
+    // class has a user-declared destructor and owns raw OS handles
+    // (epfd_, udp_fd_) plus a discovery slot index (slot_). A
+    // member-wise default move copies those primitive ints as-is
+    // without resetting them in the source object, so both the moved-
+    // from and moved-to Node would believe they own the same fds/slot
+    // -- and when the moved-from object's destructor runs stop(), it
+    // would close/unregister resources the moved-to object still
+    // actively uses. Written out explicitly instead, matching the
+    // same pattern RingBuffer/LatestValueSlot/DiscoveryRegistry
+    // already use for exactly this reason.
+    Node(Node&& other) noexcept
+        : node_id_(std::move(other.node_id_)), host_(std::move(other.host_)),
+          force_transport_(std::move(other.force_transport_)),
+          udp_port_requested_(other.udp_port_requested_), udp_port_(other.udp_port_),
+          shm_ring_capacity_(other.shm_ring_capacity_), shm_slot_capacity_(other.shm_slot_capacity_),
+          registry_(std::move(other.registry_)), slot_(other.slot_), epfd_(other.epfd_), udp_fd_(other.udp_fd_),
+          started_(other.started_), last_heartbeat_(other.last_heartbeat_), last_discovery_(other.last_discovery_),
+          published_(std::move(other.published_)), subscribed_(std::move(other.subscribed_)),
+          keep_latest_topics_(std::move(other.keep_latest_topics_)), seq_by_topic_(std::move(other.seq_by_topic_)),
+          stats_(std::move(other.stats_)), known_peers_(std::move(other.known_peers_)),
+          out_rings_(std::move(other.out_rings_)), in_rings_(std::move(other.in_rings_)),
+          out_slots_(std::move(other.out_slots_)), in_slots_(std::move(other.in_slots_)),
+          slot_last_seen_seq_(std::move(other.slot_last_seen_seq_)),
+          udp_msg_id_counter_(other.udp_msg_id_counter_), publish_scratch_(std::move(other.publish_scratch_)),
+          udp_reassembly_(std::move(other.udp_reassembly_)) {
+        other.slot_ = -1;
+        other.epfd_ = -1;
+        other.udp_fd_ = -1;
+        other.started_ = false;
+    }
+    Node& operator=(Node&& other) noexcept {
+        if (this == &other) return *this;
+        stop();  // release whatever *this currently holds first
+
+        node_id_ = std::move(other.node_id_);
+        host_ = std::move(other.host_);
+        force_transport_ = std::move(other.force_transport_);
+        udp_port_requested_ = other.udp_port_requested_;
+        udp_port_ = other.udp_port_;
+        shm_ring_capacity_ = other.shm_ring_capacity_;
+        shm_slot_capacity_ = other.shm_slot_capacity_;
+        registry_ = std::move(other.registry_);
+        slot_ = other.slot_;
+        epfd_ = other.epfd_;
+        udp_fd_ = other.udp_fd_;
+        started_ = other.started_;
+        last_heartbeat_ = other.last_heartbeat_;
+        last_discovery_ = other.last_discovery_;
+        published_ = std::move(other.published_);
+        subscribed_ = std::move(other.subscribed_);
+        keep_latest_topics_ = std::move(other.keep_latest_topics_);
+        seq_by_topic_ = std::move(other.seq_by_topic_);
+        stats_ = std::move(other.stats_);
+        known_peers_ = std::move(other.known_peers_);
+        out_rings_ = std::move(other.out_rings_);
+        in_rings_ = std::move(other.in_rings_);
+        out_slots_ = std::move(other.out_slots_);
+        in_slots_ = std::move(other.in_slots_);
+        slot_last_seen_seq_ = std::move(other.slot_last_seen_seq_);
+        udp_msg_id_counter_ = other.udp_msg_id_counter_;
+        publish_scratch_ = std::move(other.publish_scratch_);
+        udp_reassembly_ = std::move(other.udp_reassembly_);
+
+        // Reset the source's handles so its destructor's stop() is a
+        // no-op instead of tearing down what *this now owns.
+        other.slot_ = -1;
+        other.epfd_ = -1;
+        other.udp_fd_ = -1;
+        other.started_ = false;
+        return *this;
+    }
+
     ~Node() { stop(); }
 
+    /// Binds the UDP socket, registers with discovery, and makes this
+    /// node visible to every other node sharing the same discovery
+    /// domain. Call advertise()/subscribe() either before or after
+    /// start() -- both orders work, since topic changes propagate to
+    /// peers via the next heartbeat regardless of when they're made.
+    /// Throws NodeError if the UDP socket can't be bound (e.g. a
+    /// specific requested port is already in use).
     void start() {
         epfd_ = epoll_create1(0);
         setup_udp_socket();
@@ -137,21 +280,63 @@ public:
                                          transport_pref_code());
         last_heartbeat_ = now();
         last_discovery_ = now();
+        started_ = true;
     }
 
+    bool is_started() const { return started_; }
+
+    /// Declares this node as a publisher of `topic`. Must be called
+    /// before publish() on that topic (publish() to an un-advertised
+    /// topic throws NodeError). Safe to call before or after start().
     void advertise(const std::string& topic) {
         published_.insert(topic);
         seq_by_topic_[topic] = 0;
     }
 
+    /// Raw-bytes subscribe: `cb` is invoked with a pointer valid only
+    /// for the duration of the call -- copy out anything you need to
+    /// keep. For type-safe subscription to a POD struct or a
+    /// pre-serialized (e.g. FlatBuffers) buffer, prefer the templated
+    /// subscribe<T>() overload below instead.
+    ///
+    /// keep_latest=true: bounded-staleness delivery via a lock-free
+    /// single-slot primitive instead of the default FIFO ring -- the
+    /// right choice for a live sensor feed driving a control loop
+    /// (IMU, pose), where a slow subscriber should see the freshest
+    /// sample instead of working through a backlog. See
+    /// shared_memory_ipc.py's / latest_value_slot.hpp's design notes
+    /// and cpp/CPP_PORT_REPORT.md for the measured latency difference
+    /// this makes under load.
     void subscribe(const std::string& topic, Callback cb, bool keep_latest = false) {
         subscribed_[topic] = std::move(cb);
         stats_[topic] = SubStats{};
         if (keep_latest) keep_latest_topics_.insert(topic);
     }
 
+    /// Type-safe subscribe: the callback receives a `const T&` instead
+    /// of raw bytes. T must either be trivially copyable (the default
+    /// zero-copy path, right for small POD messages like IMU/encoder
+    /// samples) or have an explicit MessageTraits<T> specialization
+    /// (e.g. RawBytes for a pre-serialized FlatBuffers buffer). T is
+    /// deduced from the callback's argument type when possible, but
+    /// explicit instantiation (`node.subscribe<ImuSample>(...)`) is
+    /// recommended for clarity at the call site.
+    template <typename T, typename F>
+    void subscribe(const std::string& topic, F&& cb, bool keep_latest = false) {
+        subscribe(topic, Callback([cb = std::forward<F>(cb)](const uint8_t* data, uint32_t len) {
+            cb(MessageTraits<T>::deserialize(data, len));
+        }), keep_latest);
+    }
+
+    /// Raw-bytes publish. `payload` is copied into the wire envelope
+    /// before this call returns, so it's safe to reuse/free
+    /// immediately after. Throws NodeError if `topic` wasn't
+    /// advertise()'d first.
     void publish(const std::string& topic, const uint8_t* payload, uint32_t len) {
-        if (!published_.count(topic)) throw std::runtime_error("publish to un-advertised topic: " + topic);
+        if (!published_.count(topic))
+            throw NodeError("publish() to un-advertised topic " + topic +
+                             " on node " + node_id_ + " -- call advertise(\"" + topic +
+                             "\") first");
         uint32_t seq = seq_by_topic_[topic]++;
         uint64_t send_ns = now_ns();
         pack_envelope_into(publish_scratch_, topic, seq, send_ns, node_id_, payload, len);
@@ -198,9 +383,28 @@ public:
         }
     }
 
-    // Drives discovery polling, heartbeats, shm link polling, and UDP
-    // receive, for up to `budget_ms`. Call this in a tight loop from
-    // your own main() -- there is no hidden thread here.
+    /// Type-safe publish: accepts any T with a MessageTraits<T>
+    /// (trivially-copyable POD structs work automatically; use
+    /// RawBytes to publish an already-serialized buffer). T is
+    /// deduced from `message`'s type.
+    template <typename T>
+    void publish(const std::string& topic, const T& message) {
+        publish(topic, MessageTraits<T>::data(message), MessageTraits<T>::size(message));
+    }
+
+    /// Drives discovery polling, heartbeats, shm link polling, and UDP
+    /// receive, for up to `budget_ms`. Call this in a tight loop from
+    /// your own main() -- there is no hidden thread here.
+    ///
+    /// IMPORTANT: call this periodically even inside a long-running,
+    /// otherwise-tight publish loop, not just from a subscriber's
+    /// loop. spin_once() is what sends this node's own heartbeat --
+    /// skip it for longer than the discovery TTL and *other* nodes
+    /// will conclude this one has died and tear down their links to
+    /// it, even though it's still actively publishing. This was a
+    /// real, measured bug (see cpp/CPP_PORT_REPORT.md and the ~300ms
+    /// latency investigation), not a hypothetical footgun -- prefer
+    /// spin_for() below for exactly this reason.
     void spin_once(int budget_ms = 1) {
         poll_shm_links();
         poll_udp(0);  // non-blocking: don't let waiting for UDP traffic that
@@ -219,6 +423,39 @@ public:
         }
     }
 
+    /// Convenience wrapper: call spin_once() in a loop for `duration`.
+    /// This is the pattern every test/benchmark in this project
+    /// hand-rolled independently (`while (now() < t_end) spin_once();`)
+    /// -- provided here once, correctly, instead of leaving every
+    /// caller to reimplement it (and potentially forget to call it at
+    /// all inside a tight publish loop, which is exactly the bug
+    /// spin_once()'s docs above warn about).
+    void spin_for(std::chrono::steady_clock::duration duration, int budget_ms = 1) {
+        auto deadline = std::chrono::steady_clock::now() + duration;
+        while (std::chrono::steady_clock::now() < deadline) spin_once(budget_ms);
+    }
+
+    /// Like spin_for(), but for a publish loop: calls `publish_fn`
+    /// repeatedly, and periodically calls spin_once() in between
+    /// (every `spin_every` calls) so this node's own heartbeat and
+    /// discovery bookkeeping keep running even inside a tight, fast
+    /// publish loop. This is the direct fix for the spin_once()
+    /// warning above, applied automatically instead of left as
+    /// something every caller has to remember.
+    template <typename F>
+    void publish_loop_for(std::chrono::steady_clock::duration duration, F&& publish_fn,
+                           unsigned spin_every = 256) {
+        auto deadline = std::chrono::steady_clock::now() + duration;
+        unsigned count = 0;
+        while (std::chrono::steady_clock::now() < deadline) {
+            publish_fn();
+            if ((++count % spin_every) == 0) spin_once(0);
+        }
+    }
+
+    /// Unregisters from discovery, closes all links and the UDP
+    /// socket. Safe to call multiple times (idempotent) and safe to
+    /// skip -- the destructor calls this automatically.
     void stop() {
         for (auto& [id, r] : out_rings_) { r.mark_closed(); }
         for (auto& [id, s] : out_slots_) { s.mark_closed(); }
@@ -227,10 +464,22 @@ public:
         if (slot_ >= 0) { registry_.unregister(slot_); slot_ = -1; }
         if (udp_fd_ >= 0) { close(udp_fd_); udp_fd_ = -1; }
         if (epfd_ >= 0) { close(epfd_); epfd_ = -1; }
+        started_ = false;
     }
 
+    /// Delivery/latency statistics for a subscribed topic (count,
+    /// drops, byte total, per-message latency samples). Returns a
+    /// reference to an internal, growing structure -- see
+    /// cpp/CPP_PORT_REPORT.md's notes on SubStats::latencies_ms for
+    /// the known unbounded-growth caveat in a long-running deployment.
     SubStats& stats(const std::string& topic) { return stats_[topic]; }
+
+    /// The UDP port this node actually bound to -- useful when
+    /// NodeOptions::udp_port was left at 0 (OS picks a free port) and
+    /// something else needs to know which port was chosen.
     uint16_t udp_port() const { return udp_port_; }
+
+    const std::string& node_id() const { return node_id_; }
 
 private:
     enum class LinkKind { Shm, Udp };
@@ -471,6 +720,7 @@ private:
     DiscoveryRegistry registry_;
     int slot_ = -1;
     int epfd_ = -1, udp_fd_ = -1;
+    bool started_ = false;
     double last_heartbeat_ = 0, last_discovery_ = 0;
 
     std::set<std::string> published_;

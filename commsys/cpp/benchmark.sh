@@ -45,6 +45,10 @@ echo "-- test_ring_stress --" >> "$OUT"
 rm -f /dev/shm/commsys_cpp_* 2>/dev/null || true
 "$BUILD_DIR/node/test_ring_stress" >> "$OUT" 2>&1
 
+echo "-- test_typed_api --" >> "$OUT"
+rm -f /dev/shm/commsys_cpp_* 2>/dev/null || true
+"$BUILD_DIR/node/test_typed_api" >> "$OUT" 2>&1
+
 echo '```' >> "$OUT"
 echo >> "$OUT"
 echo "## Full benchmark sweep" >> "$OUT"

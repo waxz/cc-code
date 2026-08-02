@@ -16,6 +16,7 @@ endfunction()
 commsys_add_executable(test_node_basic bench/test_node_basic.cpp)
 commsys_add_executable(test_node_udp_latest bench/test_node_udp_latest.cpp)
 commsys_add_executable(test_ring_stress bench/test_ring_stress.cpp)
+commsys_add_executable(test_typed_api bench/test_typed_api.cpp)
 commsys_add_executable(benchmark_report bench/benchmark_report.cpp)
 commsys_add_executable(bench_cpu_affinity bench/bench_cpu_affinity.cpp)
 
@@ -30,6 +31,8 @@ add_custom_target(run_smoke_tests
   COMMAND ${CMAKE_COMMAND} -E rm -rf /dev/shm/commsys_cpp_*
   COMMAND $<TARGET_FILE:test_ring_stress>
   COMMAND ${CMAKE_COMMAND} -E rm -rf /dev/shm/commsys_cpp_*
-  DEPENDS test_node_basic test_node_udp_latest test_ring_stress
+  COMMAND $<TARGET_FILE:test_typed_api>
+  COMMAND ${CMAKE_COMMAND} -E rm -rf /dev/shm/commsys_cpp_*
+  DEPENDS test_node_basic test_node_udp_latest test_ring_stress test_typed_api
   USES_TERMINAL
 )
