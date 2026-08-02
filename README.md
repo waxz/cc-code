@@ -1,54 +1,37 @@
-# commsys
+# cc-code
 
-A high-efficiency local + resilient-network communication system,
-built up in stages: shared-memory IPC, a resilient reliability layer
-for lossy WiFi links, a ROS-like decentralized discovery/pub-sub
-layer, and finally a C++ port of the latency-critical core with a
-full benchmark comparison.
+Multi-module repository. Each top-level directory is an independent
+module with its own build/benchmark scripts; CI just calls those
+scripts rather than embedding build logic in the workflow itself.
 
-## Layout
+## Modules
 
-- **`python/`** — the reference implementation. Shared-memory ring
-  buffer and seqlock "latest value" primitive, a resilient
-  reliable-UDP channel for lossy networks, decentralized node
-  discovery, and a ROS-like pub/sub `Node` API. See
-  [`python/README.md`](python/README.md) for the full architecture
-  writeup, including the p99 latency investigation and fixes.
-- **`cpp/node/`** — a C++ port of the discovery + pub/sub core (the
-  part shown to actually have a latency bottleneck worth porting).
-  See [`cpp/CPP_PORT_REPORT.md`](cpp/CPP_PORT_REPORT.md) for the full
-  benchmark comparison and bottleneck analysis against the Python
-  version, including two real bugs the port caught along the way.
-- **`cpp/bench_reference/`** — standalone microbenchmarks (raw struct
-  packing, FlatBuffers, ring buffer bandwidth, TCC JIT) used earlier
-  to evaluate whether C++ was worth the port before committing to it.
-- **`nim/`** — a Nim implementation of the same hot-path benchmarks,
-  evaluated as a safer/more Python-like alternative to C++ (see
-  `cpp/CPP_PORT_REPORT.md`'s sibling discussion for that comparison).
+- **[`commsys/`](commsys/)** — a local + resilient-network
+  communication system: shared-memory IPC, a resilient reliable-UDP
+  channel for lossy WiFi, decentralized node discovery, a ROS-like
+  pub/sub API, and a C++ port of the latency-critical core with a
+  full benchmark comparison against the Python reference
+  implementation. Three sub-modules of its own:
+  [`commsys/python/`](commsys/python/) (reference implementation),
+  [`commsys/cpp/`](commsys/cpp/) (CMake-built C++ port),
+  [`commsys/nim/`](commsys/nim/) (Nim comparison benchmarks).
 
-## Try it
+## Module conventions
 
-```bash
-# Python: full test suite + demo
-cd python && python3 -m pytest tests/ -v
-python3 demo_ros_like.py
+Every module directory follows the same shape:
+- `build.sh` — compiles/installs whatever that module needs. Safe to
+  run repeatedly.
+- `benchmark.sh` — runs tests (where applicable) and the module's
+  benchmark suite, writing a report to `commsys/results/<module>_report.md`.
+- CI (`.github/workflows/ci.yml`) does nothing module-specific beyond
+  calling these two scripts in order — the scripts are the source of
+  truth for how to build and benchmark each module, runnable
+  identically on a laptop or in CI.
 
-# C++: compile and smoke-test
-cd cpp/node
-g++ -O2 -std=c++17 -I. bench/test_node_basic.cpp -o /tmp/t -lrt && /tmp/t
-```
+## Benchmark reports
 
-## CI
-
-`.github/workflows/ci.yml` runs the Python test suite and a C++
-compile-and-smoke-test on every push/PR. A separate `benchmark` job
-(manually triggered, or on push to `main`) runs the full benchmark
-sweep on GitHub's 4-vCPU runner and uploads the reports as a build
-artifact — the first real multi-core data point for the scheduling
-questions raised in `cpp/CPP_PORT_REPORT.md`, which were all measured
-on a 1-vCPU sandbox up to that point.
-
-Trigger it manually:
-```bash
-gh workflow run ci.yml
-```
+`commsys/results/` holds the latest committed benchmark report per
+module, updated automatically by the `benchmark` job in CI (manual
+trigger via `gh workflow run`, or automatically on push to `main`).
+These are real numbers from GitHub's hosted runners, not just local
+sandbox measurements.

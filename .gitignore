@@ -4,30 +4,24 @@ __pycache__/
 .pytest_cache/
 .benchmarks/
 
-# C++
+# C++ build directory (CMake) and any stray compiled binaries
+build/
 *.o
 *.out
-cpp_bench/bench_struct_tcc
-cpp_bench/bench_struct_gcc_O0
-cpp_bench/bench_struct_gcc_O2
-cpp_bench/bench_ringbuffer
-cpp_bench/bench_ringbuffer_lto
-cpp_bench/bench_ringbuffer_large
-cpp_bench/bench_flatbuffers
-cpp_bench/bench_flatbuffers_lto
-cpp_bench/bench_udp_raw
-cpp_bench/bench_memcpy_raw
-cpp_bench/bench_tcc_jit
-cpp_node/bench/benchmark_report
-cpp_node/bench/test_node_basic
-cpp_node/bench/test_node_udp_latest
-cpp_node/bench/test_ring_stress
+commsys/cpp/bench_reference/bench_*
+!commsys/cpp/bench_reference/bench_*.cpp
+!commsys/cpp/bench_reference/bench_*.c
+!commsys/cpp/bench_reference/bench_*.py
+commsys/cpp/node/bench/benchmark_report
+commsys/cpp/node/bench/test_node_basic
+commsys/cpp/node/bench/test_node_udp_latest
+commsys/cpp/node/bench/test_ring_stress
 
 # Nim
-nim_bench/bench_struct_nim
-nim_bench/bench_ringbuffer_nim*
-nim_bench/bench_flatbuffers_nim
-nim_bench/nimcache/
+commsys/nim/bench_struct_nim
+commsys/nim/bench_ringbuffer_nim*
+commsys/nim/bench_flatbuffers_nim
+commsys/nim/nimcache/
 
 # Shared memory artifacts (never belong in git, listed for clarity only)
 *.shm
