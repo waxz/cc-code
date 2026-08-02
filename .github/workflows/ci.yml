@@ -1,0 +1,125 @@
+name: commsys CI and benchmarks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      run_full_benchmarks:
+        description: "Run the full Python + C++ benchmark sweep (several minutes)"
+        type: boolean
+        default: true
+
+jobs:
+  # Fast correctness gate: runs on every push and PR. Python unit
+  # tests plus a C++ compile-and-smoke-test pass. Kept short
+  # deliberately so it's cheap to run on every commit; the full
+  # benchmark sweep is a separate job below.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: |
+          pip install --break-system-packages \
+            pytest pytest-asyncio pytest-benchmark \
+            msgpack numpy flatbuffers
+
+      - name: Report runner hardware
+        run: |
+          echo "vCPUs: $(nproc)"
+          echo "Memory:"; free -h
+          echo "Kernel: $(uname -a)"
+
+      - name: Run Python unit tests
+        run: |
+          cd python
+          python3 -m pytest tests/ -v
+
+      - name: Install C++ toolchain extras (flatbuffers)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq flatbuffers-compiler libflatbuffers-dev
+
+      - name: Compile-check C++ node headers
+        run: |
+          cd cpp/node
+          cat > /tmp/compile_check.cpp <<'EOF'
+          #include "include/node.hpp"
+          int main() { commsys::Node n("ci_check"); return 0; }
+          EOF
+          g++ -O2 -std=c++17 -Wall -I. /tmp/compile_check.cpp -o /tmp/compile_check -lrt
+          echo "C++ headers compiled cleanly"
+
+      - name: Build and run C++ smoke tests
+        run: |
+          cd cpp/node
+          g++ -O2 -std=c++17 -I. bench/test_node_basic.cpp -o /tmp/test_node_basic -lrt
+          g++ -O2 -std=c++17 -I. bench/test_node_udp_latest.cpp -o /tmp/test_node_udp_latest -lrt
+          rm -f /dev/shm/commsys_cpp_* 2>/dev/null || true
+          timeout 20 /tmp/test_node_basic
+          rm -f /dev/shm/commsys_cpp_* 2>/dev/null || true
+          timeout 20 /tmp/test_node_udp_latest
+
+  # Full benchmark sweep: manually triggered (gh workflow run) or on
+  # push to main. This is the job that actually answers the question
+  # this project flagged as untested -- does the single-core scheduling
+  # contention tail (found and documented in CPP_PORT_REPORT.md) shrink
+  # on real multi-core hardware? GitHub's public-repo ubuntu-latest
+  # runner gives 4 vCPUs, a genuine improvement over the 1-vCPU sandbox
+  # every prior number in this repo was measured on.
+  benchmark:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install --break-system-packages msgpack numpy flatbuffers
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq flatbuffers-compiler libflatbuffers-dev
+
+      - name: Report runner hardware
+        run: |
+          echo "vCPUs: $(nproc)" | tee hardware_info.txt
+          echo "Memory:" | tee -a hardware_info.txt
+          free -h | tee -a hardware_info.txt
+          echo "Kernel: $(uname -a)" | tee -a hardware_info.txt
+
+      - name: Run Python benchmark sweep
+        run: |
+          cd python
+          rm -f /dev/shm/commsys_* 2>/dev/null || true
+          python3 benchmark_report.py
+          cp BENCHMARK_REPORT.md ../hardware_info_python_report.md
+
+      - name: Build and run C++ benchmark sweep
+        run: |
+          cd cpp/node
+          g++ -O2 -std=c++17 -I. bench/benchmark_report.cpp -o bench/benchmark_report -lrt
+          rm -f /dev/shm/commsys_cpp_* 2>/dev/null || true
+          ./bench/benchmark_report | tee ../../cpp_benchmark_output.md
+
+      - name: Upload benchmark reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-reports-${{ github.run_number }}
+          path: |
+            hardware_info.txt
+            hardware_info_python_report.md
+            cpp_benchmark_output.md
+            python/BENCHMARK_REPORT.md
+            cpp/CPP_PORT_REPORT.md
+          retention-days: 90

@@ -1,0 +1,62 @@
+// robot_msgs.fbs
+//
+// Message types for the two hot-path robotics workloads this system
+// needs to move efficiently:
+//
+//   - IMU / encoder samples: tiny (~40 bytes), published at high rate
+//     (100Hz-1kHz+). The cost that matters here is per-message
+//     overhead, not payload size, so we batch several fixed-layout
+//     `struct` samples into one `table` and let the receiver iterate
+//     the vector in place -- no per-sample allocation or parsing.
+//
+//   - LaserScan: large (thousands of floats per scan), published at
+//     10-40Hz. The cost that matters here is payload size: with
+//     pickle/msgpack you pay to deserialize the *entire* float array
+//     into a fresh Python list before you can touch a single value.
+//     FlatBuffers exposes the vector as a direct, typed view over the
+//     wire bytes, so scanning/slicing costs zero deserialization.
+//
+// `struct` (ImuSample/EncoderSample/Vec3) = fixed-size, inline,
+// no vtable -- cheapest possible representation, but can't contain
+// vectors or be optional. `table` (ImuBatch/EncoderBatch/LaserScan)
+// = flexible, versionable, can hold vectors of structs or scalars.
+
+namespace RobotMsgs;
+
+struct Vec3 {
+  x:float;
+  y:float;
+  z:float;
+}
+
+struct ImuSample {
+  timestamp_ns:uint64;
+  accel:Vec3;   // m/s^2
+  gyro:Vec3;    // rad/s
+}
+
+struct EncoderSample {
+  timestamp_ns:uint64;
+  left_ticks:int64;
+  right_ticks:int64;
+  velocity_mps:float;
+}
+
+table ImuBatch {
+  samples:[ImuSample];
+}
+
+table EncoderBatch {
+  samples:[EncoderSample];
+}
+
+table LaserScan {
+  timestamp_ns:uint64;
+  angle_min:float;
+  angle_max:float;
+  angle_increment:float;
+  range_min:float;
+  range_max:float;
+  ranges:[float];
+  intensities:[float];   // may be empty if the sensor doesn't report it
+}
