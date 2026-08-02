@@ -36,3 +36,5 @@ add_custom_target(run_smoke_tests
   DEPENDS test_node_basic test_node_udp_latest test_ring_stress test_typed_api
   USES_TERMINAL
 )
+
+add_subdirectory(tests)

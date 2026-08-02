@@ -26,10 +26,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install system dependencies (cmake, flatbuffers)
+      - name: Install system dependencies (cmake, flatbuffers, catch2)
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq cmake flatbuffers-compiler libflatbuffers-dev
+          sudo apt-get install -y -qq cmake flatbuffers-compiler libflatbuffers-dev catch2
 
       - name: Report runner hardware
         run: |
@@ -47,6 +47,12 @@ jobs:
 
       - name: cpp/build.sh
         run: commsys/cpp/build.sh
+
+      - name: cpp unit tests (ctest / Catch2)
+        run: |
+          cd commsys/cpp/build
+          rm -f /dev/shm/*_test_* /dev/shm/commsys_test_* /dev/shm/rb_* /dev/shm/lvs_* /dev/shm/disc_* || true
+          ctest --output-on-failure
 
       - name: cpp smoke tests
         run: |
@@ -74,7 +80,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq cmake flatbuffers-compiler libflatbuffers-dev nim
+          sudo apt-get install -y -qq cmake flatbuffers-compiler libflatbuffers-dev catch2 nim
 
       - name: python/build.sh && python/benchmark.sh
         run: |

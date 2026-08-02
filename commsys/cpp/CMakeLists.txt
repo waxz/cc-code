@@ -17,6 +17,7 @@ option(COMMSYS_BUILD_REFERENCE_BENCHMARKS
        "Build the standalone microbenchmarks used to decide whether the C++ port was worth it in the first place"
        ON)
 
+enable_testing()
 add_subdirectory(node)
 
 if(COMMSYS_BUILD_REFERENCE_BENCHMARKS)

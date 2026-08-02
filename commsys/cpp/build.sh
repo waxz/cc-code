@@ -16,4 +16,7 @@ cmake -S "$SCRIPT_DIR" -B "$BUILD_DIR" -DCMAKE_BUILD_TYPE=Release
 cmake --build "$BUILD_DIR" -j"$(nproc)"
 
 echo "== build complete =="
-find "$BUILD_DIR" -maxdepth 2 -type f -executable -not -path "*/CMakeFiles/*" | sort
+find "$BUILD_DIR" -maxdepth 3 -type f -executable -not -path "*/CMakeFiles/*" | sort
+echo
+echo "Run unit tests with: cd $BUILD_DIR && ctest --output-on-failure"
+echo "(or directly:        $BUILD_DIR/node/tests/commsys_tests)"

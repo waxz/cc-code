@@ -29,9 +29,19 @@ rm -f /dev/shm/commsys_cpp_* 2>/dev/null || true
   uname -a
   echo '```'
   echo
-  echo "## Smoke tests"
+  echo "## Unit tests (ctest / Catch2)"
   echo '```'
 } > "$OUT"
+
+rm -f /dev/shm/*_test_* /dev/shm/commsys_test_* /dev/shm/rb_* /dev/shm/lvs_* /dev/shm/disc_* 2>/dev/null || true
+(cd "$BUILD_DIR" && ctest --output-on-failure) >> "$OUT" 2>&1 || echo "(unit tests unavailable or failed -- see above; Catch2 may not be installed)" >> "$OUT"
+echo '```' >> "$OUT"
+echo >> "$OUT"
+
+{
+  echo "## Smoke tests"
+  echo '```'
+} >> "$OUT"
 
 echo "-- test_node_basic --" >> "$OUT"
 rm -f /dev/shm/commsys_cpp_* 2>/dev/null || true

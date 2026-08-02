@@ -324,7 +324,7 @@ public:
     template <typename T, typename F>
     void subscribe(const std::string& topic, F&& cb, bool keep_latest = false) {
         subscribe(topic, Callback([cb = std::forward<F>(cb)](const uint8_t* data, uint32_t len) {
-            cb(MessageTraits<T>::deserialize(data, len));
+            cb(from_bytes<T>(data, len));
         }), keep_latest);
     }
 
@@ -389,7 +389,8 @@ public:
     /// deduced from `message`'s type.
     template <typename T>
     void publish(const std::string& topic, const T& message) {
-        publish(topic, MessageTraits<T>::data(message), MessageTraits<T>::size(message));
+        BytesView view = to_bytes(message);
+        publish(topic, view.data, view.size);
     }
 
     /// Drives discovery polling, heartbeats, shm link polling, and UDP

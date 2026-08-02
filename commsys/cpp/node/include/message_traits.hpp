@@ -103,4 +103,43 @@ struct MessageTraits<RawBytes> {
     static RawBytes deserialize(const uint8_t* data, uint32_t len) { return RawBytes(data, len); }
 };
 
+// A (pointer, length) pair describing a message's wire representation
+// -- what to_bytes() returns. Deliberately not just
+// std::pair<const uint8_t*, uint32_t>: named fields read better at
+// call sites (view.data / view.size, not view.first / view.second),
+// and this documents its own lifetime rule right next to its use.
+struct BytesView {
+    const uint8_t* data = nullptr;
+    uint32_t size = 0;
+};
+
+// Explicit, directly-usable, and directly unit-testable wrapper
+// around MessageTraits<T> -- this is the single place both Node's
+// publish<T>()/subscribe<T>() and any external caller go through to
+// convert a typed message to/from its wire representation, rather
+// than each call site reaching into MessageTraits<T>::data()/size()/
+// deserialize() separately. Useful on its own too: anything that
+// wants to inspect, log, or hand-test a message's wire bytes without
+// spinning up a Node can call these directly.
+//
+// Lifetime: the returned BytesView borrows from `msg` (points into
+// it, for a trivially-copyable T, or into whatever RawBytes/custom
+// MessageTraits<T>::data() returns) -- it is only valid as long as
+// `msg` is. This mirrors the existing rule for Node's raw
+// (const uint8_t*, uint32_t) API and RawBytes's own doc comment.
+template <typename T>
+BytesView to_bytes(const T& msg) {
+    return BytesView{MessageTraits<T>::data(msg), MessageTraits<T>::size(msg)};
+}
+
+template <typename T>
+T from_bytes(const uint8_t* data, uint32_t len) {
+    return MessageTraits<T>::deserialize(data, len);
+}
+
+template <typename T>
+T from_bytes(const BytesView& view) {
+    return MessageTraits<T>::deserialize(view.data, view.size);
+}
+
 }  // namespace commsys
