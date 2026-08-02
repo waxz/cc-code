@@ -1,14 +1,14 @@
 # commsys C++ benchmark report
 
-Generated: 2026-08-02 03:50:22 UTC
+Generated: 2026-08-02 03:55:24 UTC
 
 ## Hardware
 ```
-vCPUs: 1
+vCPUs: 4
                total        used        free      shared  buff/cache   available
-Mem:           3.9Gi       356Mi       3.6Gi       4.2Mi       185Mi       3.6Gi
-Swap:             0B          0B          0B
-Linux vm 6.18.5 #1 SMP PREEMPT_DYNAMIC @0 x86_64 x86_64 x86_64 GNU/Linux
+Mem:            15Gi       997Mi        11Gi        45Mi       3.2Gi        14Gi
+Swap:          3.0Gi          0B       3.0Gi
+Linux runnervmvrwv9 6.17.0-1020-azure #20~24.04.1-Ubuntu SMP Fri Jun 19 20:09:14 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
 ```
 
 ## Smoke tests
@@ -23,13 +23,13 @@ Linux vm 6.18.5 #1 SMP PREEMPT_DYNAMIC @0 x86_64 x86_64 x86_64 GNU/Linux
 subscriber exit status: 0
 -- test_node_udp_latest --
 [udp] received 5/5
-[keep_latest] sent=2829 (unpaced firehose)
-[keep_latest] dispatched=770
-[keep_latest] mean=0.0071ms p50=0.0066ms p99=0.0151ms max=0.0933ms
+[keep_latest] sent=351338 (unpaced firehose)
+[keep_latest] dispatched=347010
+[keep_latest] mean=0.0067ms p50=0.0066ms p99=0.0088ms max=0.0687ms
 -- test_ring_stress --
-[fifo ring] sent=121658 (unpaced firehose)
-[fifo ring] dispatched=121658 drops=0
-[fifo ring] mean=1.3582ms p50=1.2176ms p99=2.4904ms max=116.3865ms
+[fifo ring] sent=449542 (unpaced firehose)
+[fifo ring] dispatched=449542 drops=0
+[fifo ring] mean=0.0080ms p50=0.0061ms p99=0.0269ms max=0.9107ms
 ```
 
 ## Full benchmark sweep
@@ -42,35 +42,35 @@ Same scenario matrix as benchmark_report.py, same machine, same 2.5s steady-stat
 
 | scenario                     |    msgs |  drops |    bandwidth |      mean |       p99 |       max |
 |------------------------------|---------|--------|--------------|-----------|-----------|-----------|
-| 500Hz shm                    |     1197 |      0 |     0.0153 MB/s |    0.0087ms |    0.0434ms |    0.8971ms |
-| 1000Hz shm                   |     2300 |      0 |     0.0294 MB/s |    0.0119ms |    0.0399ms |    1.7763ms |
-| 2000Hz shm                   |     4258 |      0 |     0.0545 MB/s |    0.0134ms |    0.0392ms |    2.0730ms |
-| 5000Hz shm                   |     8677 |      0 |     0.1111 MB/s |    0.0141ms |    0.0341ms |    1.9431ms |
-| 10000Hz shm                  |    13408 |      0 |     0.1716 MB/s |    0.0143ms |    0.0338ms |    2.0120ms |
-| 500Hz udp                    |     1193 |      0 |     0.0153 MB/s |    0.0193ms |    0.0496ms |    1.6296ms |
-| 1000Hz udp                   |     2286 |      0 |     0.0293 MB/s |    0.0218ms |    0.0490ms |    1.9005ms |
-| 2000Hz udp                   |     4207 |      0 |     0.0538 MB/s |    0.0212ms |    0.0478ms |    0.1297ms |
-| 5000Hz udp                   |     8643 |      0 |     0.1106 MB/s |    0.0215ms |    0.0437ms |    2.0087ms |
-| 10000Hz udp                  |    13339 |      0 |     0.1707 MB/s |    0.0214ms |    0.0448ms |    1.7791ms |
+| 500Hz shm                    |     1210 |      0 |     0.0155 MB/s |    0.0010ms |    0.0242ms |    0.0283ms |
+| 1000Hz shm                   |     2343 |      0 |     0.0300 MB/s |    0.0010ms |    0.0229ms |    0.0309ms |
+| 2000Hz shm                   |     4424 |      0 |     0.0566 MB/s |    0.0008ms |    0.0166ms |    0.0449ms |
+| 5000Hz shm                   |     9355 |      0 |     0.1197 MB/s |    0.0008ms |    0.0155ms |    0.0705ms |
+| 10000Hz shm                  |    15015 |      0 |     0.1922 MB/s |    0.0008ms |    0.0131ms |    0.0599ms |
+| 500Hz udp                    |     1208 |      0 |     0.0155 MB/s |    0.0112ms |    0.0172ms |    0.0798ms |
+| 1000Hz udp                   |     2342 |      0 |     0.0300 MB/s |    0.0092ms |    0.0155ms |    0.0563ms |
+| 2000Hz udp                   |     4406 |      0 |     0.0564 MB/s |    0.0089ms |    0.0160ms |    0.0643ms |
+| 5000Hz udp                   |     9404 |      0 |     0.1204 MB/s |    0.0079ms |    0.0148ms |    0.0655ms |
+| 10000Hz udp                  |    15021 |      0 |     0.1923 MB/s |    0.0082ms |    0.0145ms |    0.0679ms |
 
 ## 2. LaserScan rate sweep (2000-point-equivalent payload, ~8KB)
 
 | scenario                     |    msgs |  drops |    bandwidth |      mean |       p99 |       max |
 |------------------------------|---------|--------|--------------|-----------|-----------|-----------|
-| 10Hz shm                     |       25 |      0 |     0.0806 MB/s |    0.0521ms |    0.0687ms |    0.0687ms |
-| 20Hz shm                     |       50 |      0 |     0.1613 MB/s |    0.0435ms |    0.0769ms |    0.0769ms |
-| 40Hz shm                     |      100 |      0 |     0.3226 MB/s |    0.0393ms |    0.1013ms |    0.1013ms |
-| 60Hz shm                     |      149 |      0 |     0.4806 MB/s |    0.0335ms |    0.1230ms |    0.1368ms |
-| 10Hz udp                     |       25 |      0 |     0.0806 MB/s |    0.0926ms |    0.1115ms |    0.1115ms |
-| 20Hz udp                     |       50 |      0 |     0.1613 MB/s |    0.1199ms |    1.8007ms |    1.8007ms |
-| 40Hz udp                     |      100 |      0 |     0.3226 MB/s |    0.0787ms |    0.1506ms |    0.1506ms |
-| 60Hz udp                     |      149 |      0 |     0.4806 MB/s |    0.0685ms |    0.1152ms |    0.1220ms |
+| 10Hz shm                     |       25 |      0 |     0.0806 MB/s |    0.0346ms |    0.0493ms |    0.0493ms |
+| 20Hz shm                     |       50 |      0 |     0.1613 MB/s |    0.0337ms |    0.0518ms |    0.0518ms |
+| 40Hz shm                     |      100 |      0 |     0.3226 MB/s |    0.0311ms |    0.0517ms |    0.0517ms |
+| 60Hz shm                     |      150 |      0 |     0.4838 MB/s |    0.0246ms |    0.0409ms |    0.0581ms |
+| 10Hz udp                     |       25 |      0 |     0.0806 MB/s |    0.0878ms |    0.1188ms |    0.1188ms |
+| 20Hz udp                     |       50 |      0 |     0.1613 MB/s |    0.0837ms |    0.1173ms |    0.1173ms |
+| 40Hz udp                     |      100 |      0 |     0.3226 MB/s |    0.0834ms |    0.1221ms |    0.1221ms |
+| 60Hz udp                     |      149 |      0 |     0.4806 MB/s |    0.0803ms |    0.0959ms |    0.1096ms |
 
 ## 3. Unpaced firehose (worst case, no publisher pacing at all)
 
 | scenario                     |    msgs |  drops |    bandwidth |      mean |       p99 |       max |
 |------------------------------|---------|--------|--------------|-----------|-----------|-----------|
-| 64KB FIFO ring, shm          |   126328 |      0 |  4139.5159 MB/s |    1.1878ms |    2.2150ms |    9.7087ms |
+| 64KB FIFO ring, shm          |   409466 |      0 | 13417.3819 MB/s |    0.0080ms |    0.0271ms |    0.6617ms |
 
 
 ## CPU core affinity comparison
@@ -80,12 +80,15 @@ cores (sched_setaffinity) reduces scheduling-contention tail latency,
 compared to leaving scheduling up to the OS default. On a single-core
 machine this is structurally a no-op (nothing to isolate from).
 ```
-nproc=1
+nproc=4
 
-Only 1 CPU available -- core isolation is structurally meaningless here
-(nothing to isolate the publisher and subscriber FROM; they must share
-the single core regardless of any affinity setting). Running the
-unpinned case only, for the record:
+=== Unpinned (OS default scheduling) ===
+unpinned                                 sent=  489487 dispatched=  489487 drops=     0 mean=  0.0079ms p50=  0.0057ms p99=  0.0267ms max=   0.9504ms
+unpinned                                 sent=  497631 dispatched=  497631 drops=     0 mean=  0.0072ms p50=  0.0057ms p99=  0.0262ms max=   0.9048ms
+unpinned                                 sent=  497741 dispatched=  497741 drops=     0 mean=  0.0078ms p50=  0.0057ms p99=  0.0264ms max=   0.9234ms
 
-unpinned (only option on 1 core)         sent=  124823 dispatched=  124823 drops=     0 mean=  1.2811ms p50=  1.2470ms p99=  2.9400ms max=   8.2679ms
+=== Pinned: publisher->CPU0, subscriber->CPU1 ===
+pinned                                   sent=  337001 dispatched=  337001 drops=     0 mean=  0.0143ms p50=  0.0085ms p99=  0.0513ms max=   1.2206ms
+pinned                                   sent=  324914 dispatched=  324914 drops=     0 mean=  0.0142ms p50=  0.0086ms p99=  0.0502ms max=   1.3018ms
+pinned                                   sent=  323996 dispatched=  323996 drops=     0 mean=  0.0137ms p50=  0.0086ms p99=  0.0489ms max=   1.2537ms
 ```

@@ -1,12 +1,12 @@
 # commsys Python benchmark report
 
-Generated: 2026-08-02 02:37:08 UTC
+Generated: 2026-08-02 03:52:43 UTC
 
 ## Hardware
 ```
 vCPUs: 4
                total        used        free      shared  buff/cache   available
-Mem:            15Gi       1.1Gi        11Gi        46Mi       3.1Gi        14Gi
+Mem:            15Gi       1.2Gi        11Gi        43Mi       3.1Gi        14Gi
 Swap:          3.0Gi          0B       3.0Gi
 Python 3.12.13
 ```
@@ -91,7 +91,7 @@ tests/test_transport.py::test_unknown_peer_raises PASSED                 [ 97%]
 tests/test_transport.py::test_large_payload_is_chunked_and_reassembled PASSED [ 98%]
 tests/test_transport.py::test_large_payload_survives_loss_during_chunk_transfer PASSED [100%]
 
-============================= 67 passed in 24.76s ==============================
+============================= 67 passed in 24.74s ==============================
 ```
 
 
@@ -99,7 +99,7 @@ tests/test_transport.py::test_large_payload_survives_loss_during_chunk_transfer 
 
 # commsys benchmark report
 
-Generated: 2026-08-02 02:37:34
+Generated: 2026-08-02 03:53:09
 
 Each row is one independent multi-process run (real OS processes, not asyncio tasks). Duration 2.5s of steady-state traffic per scenario after a 0.8s discovery settle window.
 
@@ -109,60 +109,60 @@ Small (32B/sample) high-frequency messages, published one at a time (batch size 
 
 | rate (Hz) | transport | msgs recv | drops | bandwidth | mean latency | p99 latency |
 |---|---|---|---|---|---|---|
-| 500 | shm | 928 | 0 | 0.026 MB/s | 0.565ms | 1.104ms |
-| 1000 | shm | 1746 | 0 | 0.049 MB/s | 0.371ms | 0.901ms |
-| 2000 | shm | 1744 | 0 | 0.049 MB/s | 0.370ms | 0.886ms |
-| 5000 | shm | 1750 | 0 | 0.049 MB/s | 0.370ms | 0.895ms |
-| 10000 | shm | 1743 | 0 | 0.049 MB/s | 0.368ms | 0.881ms |
-| 500 | udp | 916 | 0 | 0.026 MB/s | 0.068ms | 0.108ms |
-| 1000 | udp | 1709 | 0 | 0.048 MB/s | 0.058ms | 0.088ms |
-| 2000 | udp | 1708 | 0 | 0.048 MB/s | 0.058ms | 0.090ms |
-| 5000 | udp | 1726 | 0 | 0.048 MB/s | 0.044ms | 0.066ms |
-| 10000 | udp | 1719 | 0 | 0.048 MB/s | 0.052ms | 0.085ms |
+| 500 | shm | 933 | 0 | 0.026 MB/s | 0.555ms | 1.094ms |
+| 1000 | shm | 1751 | 0 | 0.049 MB/s | 0.367ms | 0.865ms |
+| 2000 | shm | 1760 | 0 | 0.049 MB/s | 0.373ms | 0.891ms |
+| 5000 | shm | 1758 | 0 | 0.049 MB/s | 0.374ms | 0.901ms |
+| 10000 | shm | 1753 | 0 | 0.049 MB/s | 0.361ms | 0.907ms |
+| 500 | udp | 919 | 0 | 0.026 MB/s | 0.077ms | 0.160ms |
+| 1000 | udp | 1721 | 0 | 0.048 MB/s | 0.072ms | 0.122ms |
+| 2000 | udp | 1728 | 0 | 0.048 MB/s | 0.071ms | 0.123ms |
+| 5000 | udp | 1724 | 0 | 0.048 MB/s | 0.073ms | 0.127ms |
+| 10000 | udp | 1726 | 0 | 0.048 MB/s | 0.072ms | 0.132ms |
 
 ## 2. LaserScan publish-rate sweep (2000 points/scan, ~8KB)
 
 | rate (Hz) | transport | scans recv | drops | bandwidth | mean latency | p99 latency |
 |---|---|---|---|---|---|---|
-| 10 | shm | 20 | 0 | 0.081 MB/s | 0.643ms | 1.128ms |
-| 20 | shm | 40 | 0 | 0.161 MB/s | 0.586ms | 1.130ms |
-| 40 | shm | 79 | 0 | 0.319 MB/s | 0.588ms | 1.124ms |
-| 60 | shm | 116 | 0 | 0.468 MB/s | 0.623ms | 1.089ms |
-| 10 | udp | 20 | 0 | 0.081 MB/s | 0.279ms | 0.365ms |
-| 20 | udp | 40 | 0 | 0.161 MB/s | 0.241ms | 0.294ms |
-| 40 | udp | 79 | 0 | 0.319 MB/s | 0.221ms | 0.470ms |
-| 60 | udp | 115 | 0 | 0.464 MB/s | 0.218ms | 0.303ms |
+| 10 | shm | 20 | 0 | 0.081 MB/s | 0.603ms | 1.110ms |
+| 20 | shm | 40 | 0 | 0.161 MB/s | 0.594ms | 1.130ms |
+| 40 | shm | 79 | 0 | 0.319 MB/s | 0.609ms | 1.168ms |
+| 60 | shm | 115 | 0 | 0.464 MB/s | 0.613ms | 1.168ms |
+| 10 | udp | 20 | 0 | 0.081 MB/s | 0.543ms | 0.618ms |
+| 20 | udp | 40 | 0 | 0.161 MB/s | 0.533ms | 0.632ms |
+| 40 | udp | 78 | 0 | 0.315 MB/s | 0.508ms | 0.626ms |
+| 60 | udp | 114 | 0 | 0.460 MB/s | 0.458ms | 0.562ms |
 
 ## 3. LaserScan point-count sweep (fixed 20Hz)
 
 | points | payload size | transport | scans recv | drops | bandwidth | mean latency | p99 latency |
 |---|---|---|---|---|---|---|---|
-| 1080 | ~4.3KB | shm | 40 | 0 | 0.088 MB/s | 0.588ms | 1.053ms |
-| 2000 | ~7.9KB | shm | 40 | 0 | 0.161 MB/s | 0.559ms | 1.062ms |
-| 4000 | ~15.7KB | shm | 40 | 0 | 0.321 MB/s | 0.558ms | 1.142ms |
-| 8000 | ~31.3KB | shm | 40 | 0 | 0.641 MB/s | 0.604ms | 1.160ms |
-| 1080 | ~4.3KB | udp | 40 | 0 | 0.088 MB/s | 0.199ms | 0.397ms |
-| 2000 | ~7.9KB | udp | 40 | 0 | 0.161 MB/s | 0.232ms | 0.407ms |
-| 4000 | ~15.7KB | udp | 40 | 0 | 0.321 MB/s | 0.314ms | 0.583ms |
-| 8000 | ~31.3KB | udp | 40 | 0 | 0.641 MB/s | 0.464ms | 0.806ms |
+| 1080 | ~4.3KB | shm | 40 | 0 | 0.088 MB/s | 0.669ms | 1.154ms |
+| 2000 | ~7.9KB | shm | 40 | 0 | 0.161 MB/s | 0.679ms | 1.158ms |
+| 4000 | ~15.7KB | shm | 40 | 0 | 0.321 MB/s | 0.705ms | 1.187ms |
+| 8000 | ~31.3KB | shm | 40 | 0 | 0.641 MB/s | 0.696ms | 1.173ms |
+| 1080 | ~4.3KB | udp | 40 | 0 | 0.088 MB/s | 0.416ms | 0.520ms |
+| 2000 | ~7.9KB | udp | 40 | 0 | 0.161 MB/s | 0.538ms | 0.656ms |
+| 4000 | ~15.7KB | udp | 40 | 0 | 0.321 MB/s | 0.813ms | 0.891ms |
+| 8000 | ~31.3KB | udp | 40 | 0 | 0.641 MB/s | 1.281ms | 1.397ms |
 
 ## 4. Fan-out: one IMU publisher (2kHz) -> N subscribers, shared memory
 
 | N subscribers | min/max msgs recv | total drops | mean latency | p99 latency |
 |---|---|---|---|---|
-| 1 | 2181 / 2181 | 0 | 0.373ms | 0.893ms |
-| 2 | 2129 / 2129 | 0 | 0.350ms | 0.863ms |
-| 4 | 2087 / 2087 | 0 | 0.166ms | 1.055ms |
-| 8 | 1786 / 1786 | 0 | 1.008ms | 6.040ms |
+| 1 | 2186 / 2186 | 0 | 0.366ms | 0.874ms |
+| 2 | 2139 / 2139 | 0 | 0.364ms | 0.851ms |
+| 4 | 2075 / 2075 | 0 | 0.152ms | 1.056ms |
+| 8 | 1819 / 1819 | 0 | 1.023ms | 5.844ms |
 
 ## 5. Fan-in: N IMU publishers (2kHz each) -> one subscriber, shared memory
 
 | N publishers | aggregate msgs recv | total drops | mean latency | p99 latency |
 |---|---|---|---|---|
-| 1 | 2187 | 0 | 0.376ms | 0.906ms |
-| 2 | 4374 | 0 | 0.469ms | 1.675ms |
-| 4 | 8640 | 0 | 0.025ms | 0.059ms |
-| 8 | 16880 | 0 | 0.040ms | 0.084ms |
+| 1 | 2192 | 0 | 0.359ms | 0.860ms |
+| 2 | 4363 | 0 | 0.461ms | 1.703ms |
+| 4 | 8664 | 0 | 0.024ms | 0.062ms |
+| 8 | 16931 | 0 | 0.039ms | 0.089ms |
 
 ## 6. Maximum throughput (publisher does not pace itself)
 
@@ -170,10 +170,10 @@ Section 1 above shows received rate plateauing around ~850-900 msg/s regardless 
 
 | payload | transport | msgs recv | drops | bandwidth | mean latency | p99 latency |
 |---|---|---|---|---|---|---|
-| imu (32B) | shm | 77439 | 0 | 2.168 MB/s | 3.146ms | 134.206ms |
-| imu (32B) | udp | 55992 | 0 | 1.568 MB/s | 7.107ms | 30.320ms |
-| scan (~8KB) | shm | 30044 | 0 | 121.258 MB/s | 3.655ms | 133.764ms |
-| scan (~8KB) | udp | 13477 | 2669 | 54.393 MB/s | 5.141ms | 26.681ms |
+| imu (32B) | shm | 78303 | 0 | 2.192 MB/s | 0.010ms | 0.023ms |
+| imu (32B) | udp | 61734 | 118 | 1.729 MB/s | 28.148ms | 55.669ms |
+| scan (~8KB) | shm | 27997 | 0 | 112.996 MB/s | 0.014ms | 0.033ms |
+| scan (~8KB) | udp | 8304 | 7535 | 33.515 MB/s | 24.788ms | 29.167ms |
 
 ## Analysis & limitations
 
