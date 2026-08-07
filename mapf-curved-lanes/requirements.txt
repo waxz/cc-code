@@ -1,0 +1,3 @@
+numpy>=1.24
+# Optional, for real Reeds-Shepp curve generation (see src/planners/forklift_planner.py):
+# reeds-shepp

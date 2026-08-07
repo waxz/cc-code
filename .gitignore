@@ -29,3 +29,7 @@ commsys/nim/nimcache/
 # OS / editor cruft
 .DS_Store
 *.swp
+
+# mapf-curved-lanes generated benchmark instances (not committed; only the
+# results/ report is)
+mapf-curved-lanes/data/
