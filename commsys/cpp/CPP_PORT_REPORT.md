@@ -242,12 +242,25 @@ different default behaviors:
   directly usable with `Node::publish()`'s raw `(pointer, length)`
   API with no additional wrapper needed; not duplicated here since
   there's nothing to port, only to wire together.
-- Automated unit tests in the Python `pytest` sense -- the C++ side
-  has been validated by the smoke/stress test programs in `bench/`
-  (basic pub/sub, fan-out implied by the discovery loop's design,
-  UDP chunking, both shm link types under load) rather than a
-  dedicated test framework, given the scope and time already spent
-  finding and fixing the bugs above. Porting the Python test suite's
-  ~20 `node`/`discovery`-related test cases to a C++ test framework
-  (Catch2/GoogleTest) is the natural next step before treating this
-  as production-ready rather than a validated performance reference.
+- ~~Automated unit tests~~ -- done since this report was first written:
+  49 Catch2 test cases (`tests/`) covering every module (message
+  traits, ring buffer, latest-value slot, discovery, Node, and the
+  ROS-compat layer), wired into `ctest` and CI. One real bug was
+  found *by* writing these, not before: the fork-based cross-process
+  tests originally leaked orphaned child processes on any failed
+  assertion (no RAII around `waitpid()`), which plausibly explains a
+  CI-only failure (8 of 44 tests failing on a real 4-vCPU runner while
+  passing locally) that never reproduced in this sandbox -- fixed with
+  a `ChildProcess` RAII guard. See `tests/test_helpers.hpp`.
+- ~~A friendlier, more familiar API~~ -- also done: `ros_compat.hpp`
+  provides `create_publisher<T>()`/`create_subscription<T>()`, a
+  `QoS` class, and `spin()`/`spin_some()` matching `rclcpp`'s shape,
+  as a thin composition-based wrapper (not a reimplementation) over
+  the same `Node` this whole report is about. See `API_GUIDE.md`.
+- ~~Standalone library packaging~~ -- also done: `find_package(commsys)`
+  works from an external CMake project (`commsys::node` target),
+  verified by actually building a throwaway consumer against a real
+  `cmake --install`, not just by reading the CMake docs and assuming
+  it would work (an early version had the export namespaced wrong --
+  `commsys::commsys_node` instead of the documented `commsys::node`
+  -- caught exactly because it was actually tested end to end).

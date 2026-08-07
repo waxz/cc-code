@@ -135,3 +135,63 @@ try {
 discovery registration that can't be safely duplicated). Safe to
 store in a `std::vector<Node>`, return by value from a factory
 function, etc.
+
+## ROS2/rclcpp-style API
+
+If you'd rather write (or port) code in an `rclcpp`-familiar shape,
+`ros_compat.hpp` gives you one, as a thin layer over everything above
+-- not a reimplementation, every call delegates straight to
+`commsys::Node`:
+
+```cpp
+#include "ros_compat.hpp"
+using namespace commsys::ros_compat;
+
+auto node = make_node("my_node");  // constructs + start()s in one call
+
+auto pub = node->create_publisher<ImuSample>("imu", SensorDataQoS());
+auto sub = node->create_subscription<ImuSample>("imu", SensorDataQoS(),
+    [](const ImuSample& msg) { /* ... */ });
+
+pub->publish(imu_sample);
+spin(node);  // blocks "forever" like rclcpp::spin(), or pass a predicate
+```
+
+`QoS` depth maps onto commsys's two real delivery models rather than
+pretending to replicate DDS's full policy matrix: `depth <= 1` (e.g.
+`SensorDataQoS()`) uses the `keep_latest` slot, `depth > 1` (e.g.
+`SystemDefaultsQoS()`, the default) uses the FIFO ring. Reach for the
+full `commsys::Node` API directly via `node->underlying()` for
+anything this layer doesn't cover (it deliberately doesn't attempt
+parameters, services, actions, or tf).
+
+## Using this as a standalone library
+
+The CMake build supports `find_package(commsys)` from an external
+project:
+
+```bash
+cmake --install build --prefix /wherever
+```
+
+```cmake
+# in your own project's CMakeLists.txt
+find_package(commsys REQUIRED)
+target_link_libraries(your_target PRIVATE commsys::node)
+```
+
+```cpp
+#include <commsys/node.hpp>
+#include <commsys/ros_compat.hpp>  // if you want it
+```
+
+Note the include path changes for installed use: in-tree development
+in this repo uses `#include "include/node.hpp"` (unchanged, matching
+every existing file here), while an external consumer uses the
+namespaced `#include <commsys/node.hpp>` instead, specifically so a
+consumer's own `node.hpp` (if they have one) can never collide with
+this library's.
+
+If you only want the library and not this repo's own benchmarks/tests
+when building in-tree or via `add_subdirectory()`, set
+`-DCOMMSYS_BUILD_EXAMPLES=OFF -DCOMMSYS_BUILD_TESTS=OFF`.

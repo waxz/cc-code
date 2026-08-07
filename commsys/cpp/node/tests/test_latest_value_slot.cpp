@@ -1,19 +1,14 @@
 #include <catch2/catch_all.hpp>
 #include "../include/latest_value_slot.hpp"
+#include "test_helpers.hpp"
 #include <unistd.h>
 #include <sys/wait.h>
 #include <cstring>
 #include <chrono>
-#include <random>
 
 using namespace commsys;
-
-namespace {
-std::string unique_name(const char* prefix) {
-    static std::mt19937 rng(std::random_device{}());
-    return std::string("/") + prefix + "_" + std::to_string(rng()) + "_" + std::to_string(getpid());
-}
-}  // namespace
+using commsys_test::ChildProcess;
+using commsys_test::unique_name;
 
 TEST_CASE("LatestValueSlot: read before any write returns -1 (nothing yet)", "[latest_value_slot]") {
     auto name = unique_name("lvs_empty");
@@ -102,6 +97,7 @@ TEST_CASE("LatestValueSlot: cross-process reader always sees a recent, non-torn 
         }
         _exit(0);
     }
+    ChildProcess child(pid);
     usleep(300000);  // let the writer race far ahead
 
     uint8_t out[64];
@@ -112,9 +108,7 @@ TEST_CASE("LatestValueSlot: cross-process reader always sees a recent, non-torn 
     int idx = std::stoi(val.substr(4));
     REQUIRE(idx > 2000);  // should be recent, not stuck near the start
 
-    int status;
-    waitpid(pid, &status, 0);
-    REQUIRE(WIFEXITED(status));
+    child.wait();
 }
 
 TEST_CASE("LatestValueSlot: seqlock never returns a torn/corrupted value under concurrent write+read", "[latest_value_slot][fork]") {
@@ -135,6 +129,7 @@ TEST_CASE("LatestValueSlot: seqlock never returns a torn/corrupted value under c
         }
         _exit(0);
     }
+    ChildProcess child(pid);
 
     bool any_torn = false;
     for (int i = 0; i < 5000; i++) {
@@ -147,8 +142,7 @@ TEST_CASE("LatestValueSlot: seqlock never returns a torn/corrupted value under c
     }
     REQUIRE_FALSE(any_torn);
 
-    int status;
-    waitpid(pid, &status, 0);
+    child.wait();
 }
 
 TEST_CASE("LatestValueSlot: move semantics transfer ownership correctly", "[latest_value_slot]") {

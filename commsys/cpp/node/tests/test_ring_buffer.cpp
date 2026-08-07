@@ -1,18 +1,13 @@
 #include <catch2/catch_all.hpp>
 #include "../include/ring_buffer.hpp"
+#include "test_helpers.hpp"
 #include <unistd.h>
 #include <sys/wait.h>
 #include <cstring>
-#include <random>
 
 using namespace commsys;
-
-namespace {
-std::string unique_name(const char* prefix) {
-    static std::mt19937 rng(std::random_device{}());
-    return std::string("/") + prefix + "_" + std::to_string(rng()) + "_" + std::to_string(getpid());
-}
-}  // namespace
+using commsys_test::ChildProcess;
+using commsys_test::unique_name;
 
 TEST_CASE("RingBuffer: single write/read round-trip in one process", "[ring_buffer]") {
     auto name = unique_name("rb_basic");
@@ -106,6 +101,7 @@ TEST_CASE("RingBuffer: cross-process producer/consumer via fork", "[ring_buffer]
         }
         _exit(0);
     }
+    ChildProcess child(pid);
 
     int received = 0;
     while (received < N) {
@@ -117,10 +113,7 @@ TEST_CASE("RingBuffer: cross-process producer/consumer via fork", "[ring_buffer]
         REQUIRE(std::memcmp(out, expected.data(), n) == 0);
         received++;
     }
-    int status;
-    waitpid(pid, &status, 0);
-    REQUIRE(WIFEXITED(status));
-    REQUIRE(WEXITSTATUS(status) == 0);
+    REQUIRE(child.wait() == 0);
 }
 
 TEST_CASE("RingBuffer: move semantics transfer ownership correctly", "[ring_buffer]") {
@@ -158,11 +151,9 @@ TEST_CASE("RingBuffer: attach retries and succeeds once the creator finishes", "
             _exit(2);
         }
     }
+    ChildProcess child(pid);
     usleep(20000);  // give the child's attach() a head start on the race
     auto ring = RingBuffer::create(name, 8192);
 
-    int status;
-    waitpid(pid, &status, 0);
-    REQUIRE(WIFEXITED(status));
-    REQUIRE(WEXITSTATUS(status) == 0);
+    REQUIRE(child.wait() == 0);
 }

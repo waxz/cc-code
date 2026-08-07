@@ -18,6 +18,7 @@ add_executable(commsys_tests
   test_latest_value_slot.cpp
   test_discovery.cpp
   test_node.cpp
+  test_ros_compat.cpp
 )
 target_link_libraries(commsys_tests PRIVATE commsys_node Catch2::Catch2WithMain)
 

@@ -1,19 +1,14 @@
 #include <catch2/catch_all.hpp>
 #include "../include/discovery.hpp"
+#include "test_helpers.hpp"
 #include <unistd.h>
 #include <sys/wait.h>
-#include <random>
 #include <thread>
 #include <chrono>
 
 using namespace commsys;
-
-namespace {
-std::string unique_name(const char* prefix) {
-    static std::mt19937 rng(std::random_device{}());
-    return std::string("/") + prefix + "_" + std::to_string(rng()) + "_" + std::to_string(getpid());
-}
-}  // namespace
+using commsys_test::ChildProcess;
+using commsys_test::unique_name;
 
 TEST_CASE("encode_topics/decode_topics round-trip, including the ~ keep_latest prefix", "[discovery]") {
     std::set<std::string> pub = {"imu", "scan"};

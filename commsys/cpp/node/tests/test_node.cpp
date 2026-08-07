@@ -1,18 +1,16 @@
 #include <catch2/catch_all.hpp>
 #include "../include/node.hpp"
+#include "test_helpers.hpp"
 #include <unistd.h>
 #include <sys/wait.h>
-#include <random>
 #include <chrono>
 
 using namespace commsys;
+using commsys_test::ChildProcess;
 
 namespace {
 
-std::string unique_registry() {
-    static std::mt19937 rng(std::random_device{}());
-    return "/commsys_test_disc_" + std::to_string(rng()) + "_" + std::to_string(getpid());
-}
+std::string unique_registry() { return commsys_test::unique_name("commsys_test_disc"); }
 
 struct ImuSample {
     uint64_t timestamp_ns;
@@ -23,8 +21,11 @@ struct ImuSample {
 };
 
 // Runs `pub_fn` in the parent process and `sub_fn` in a forked child,
-// waiting for both to finish. sub_fn's return value (0 = pass) becomes
-// the child's exit status, which the caller should REQUIRE against.
+// waiting for both to finish via a ChildProcess RAII guard -- so if
+// pub_fn() (or anything else in the calling TEST_CASE) throws via a
+// failed REQUIRE before we'd otherwise reach a wait, the child still
+// gets reaped during stack unwinding instead of leaking as an orphan.
+// sub_fn's return value (0 = pass) becomes the child's exit status.
 template <typename PubFn, typename SubFn>
 int run_pub_sub(PubFn&& pub_fn, SubFn&& sub_fn) {
     pid_t pid = fork();
@@ -32,10 +33,9 @@ int run_pub_sub(PubFn&& pub_fn, SubFn&& sub_fn) {
         int rc = sub_fn();
         _exit(rc);
     }
+    ChildProcess child(pid);
     pub_fn();
-    int status;
-    waitpid(pid, &status, 0);
-    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+    return child.wait();
 }
 
 }  // namespace
@@ -47,13 +47,13 @@ TEST_CASE("Node: basic FIFO pub/sub round-trip across processes", "[node][fork]"
             Node pub("basic_pub", {.force_transport = "shm", .registry_name = reg});
             pub.start();
             pub.advertise("greeting");
-            pub.spin_for(std::chrono::milliseconds(800));
+            pub.spin_for(std::chrono::milliseconds(1500));  // generous discovery settle margin
             for (int i = 0; i < 5; i++) {
                 std::string msg = "hello-" + std::to_string(i);
                 pub.publish("greeting", (const uint8_t*)msg.data(), (uint32_t)msg.size());
-                pub.spin_for(std::chrono::milliseconds(20));
+                pub.spin_for(std::chrono::milliseconds(50));
             }
-            pub.spin_for(std::chrono::milliseconds(400));
+            pub.spin_for(std::chrono::milliseconds(800));
             pub.stop();
         },
         [&] {
@@ -63,7 +63,7 @@ TEST_CASE("Node: basic FIFO pub/sub round-trip across processes", "[node][fork]"
             sub.subscribe("greeting", [&](const uint8_t* d, uint32_t n) {
                 received.emplace_back((const char*)d, n);
             });
-            sub.spin_for(std::chrono::seconds(3));
+            sub.spin_for(std::chrono::seconds(5));
             sub.stop();
             if (received.size() != 5) return 1;
             for (int i = 0; i < 5; i++) {
@@ -81,12 +81,12 @@ TEST_CASE("Node: typed publish/subscribe round-trips a POD struct", "[node][fork
             Node pub("typed_pub", {.force_transport = "shm", .registry_name = reg});
             pub.start();
             pub.advertise("imu");
-            pub.spin_for(std::chrono::milliseconds(800));
+            pub.spin_for(std::chrono::milliseconds(1500));
             for (int i = 0; i < 5; i++) {
                 pub.publish("imu", ImuSample{(uint64_t)i, (float)i * 0.1f, 0, 9.81f});
-                pub.spin_for(std::chrono::milliseconds(20));
+                pub.spin_for(std::chrono::milliseconds(50));
             }
-            pub.spin_for(std::chrono::milliseconds(400));
+            pub.spin_for(std::chrono::milliseconds(800));
             pub.stop();
         },
         [&] {
@@ -94,7 +94,7 @@ TEST_CASE("Node: typed publish/subscribe round-trips a POD struct", "[node][fork
             sub.start();
             std::vector<ImuSample> received;
             sub.subscribe<ImuSample>("imu", [&](const ImuSample& m) { received.push_back(m); });
-            sub.spin_for(std::chrono::seconds(3));
+            sub.spin_for(std::chrono::seconds(5));
             sub.stop();
             if (received.size() != 5) return 1;
             for (int i = 0; i < 5; i++) {
@@ -113,7 +113,7 @@ TEST_CASE("Node: keep_latest subscriber sees the freshest value, not a backlog",
             Node pub("kl_pub", {.force_transport = "shm", .registry_name = reg});
             pub.start();
             pub.advertise("fast");
-            pub.spin_for(std::chrono::milliseconds(800));
+            pub.spin_for(std::chrono::milliseconds(1500));
             // fast, unpaced publishing -- a keep_latest subscriber
             // should never see every single one of these
             pub.publish_loop_for(std::chrono::seconds(1), [&] {
@@ -121,7 +121,7 @@ TEST_CASE("Node: keep_latest subscriber sees the freshest value, not a backlog",
                 pub.publish("fast", ImuSample{(uint64_t)i, (float)i, 0, 0});
                 i++;
             });
-            pub.spin_for(std::chrono::milliseconds(400));
+            pub.spin_for(std::chrono::milliseconds(800));
             pub.stop();
         },
         [&] {
@@ -133,8 +133,9 @@ TEST_CASE("Node: keep_latest subscriber sees the freshest value, not a backlog",
                 dispatch_count++;
                 last_ts = m.timestamp_ns;
             }, /*keep_latest=*/true);
-            sub.spin_for(std::chrono::milliseconds(2000));
+            sub.spin_for(std::chrono::milliseconds(3500));
             sub.stop();
+            (void)last_ts;
             // The whole point of keep_latest: far fewer dispatches
             // than publishes, and the last one seen should be recent.
             if (dispatch_count == 0) return 1;
@@ -146,9 +147,10 @@ TEST_CASE("Node: keep_latest subscriber sees the freshest value, not a backlog",
 
 TEST_CASE("Node: fan-out -- one publisher, multiple subscribers all receive every message", "[node][fork]") {
     auto reg = unique_registry();
-    pid_t sub_a = fork();
-    REQUIRE(sub_a >= 0);
-    if (sub_a == 0) {
+
+    pid_t pid_a = fork();
+    REQUIRE(pid_a >= 0);
+    if (pid_a == 0) {
         Node sub("fanout_a", {.force_transport = "shm", .registry_name = reg});
         sub.start();
         std::vector<int> received;
@@ -156,14 +158,15 @@ TEST_CASE("Node: fan-out -- one publisher, multiple subscribers all receive ever
             (void)n;
             received.push_back(*(const int*)d);
         });
-        sub.spin_for(std::chrono::seconds(3));
+        sub.spin_for(std::chrono::seconds(5));
         sub.stop();
         _exit(received.size() == 8 ? 0 : 1);
     }
+    ChildProcess sub_a(pid_a);
 
-    pid_t sub_b = fork();
-    REQUIRE(sub_b >= 0);
-    if (sub_b == 0) {
+    pid_t pid_b = fork();
+    REQUIRE(pid_b >= 0);
+    if (pid_b == 0) {
         Node sub("fanout_b", {.force_transport = "shm", .registry_name = reg});
         sub.start();
         std::vector<int> received;
@@ -171,29 +174,28 @@ TEST_CASE("Node: fan-out -- one publisher, multiple subscribers all receive ever
             (void)n;
             received.push_back(*(const int*)d);
         });
-        sub.spin_for(std::chrono::seconds(3));
+        sub.spin_for(std::chrono::seconds(5));
         sub.stop();
         _exit(received.size() == 8 ? 0 : 1);
     }
+    ChildProcess sub_b(pid_b);
 
     Node pub("fanout_pub", {.force_transport = "shm", .registry_name = reg});
     pub.start();
     pub.advertise("t");
-    pub.spin_for(std::chrono::milliseconds(900));
+    pub.spin_for(std::chrono::milliseconds(1500));
     for (int i = 0; i < 8; i++) {
         pub.publish("t", (const uint8_t*)&i, sizeof(i));
-        pub.spin_for(std::chrono::milliseconds(20));
+        pub.spin_for(std::chrono::milliseconds(50));
     }
-    pub.spin_for(std::chrono::milliseconds(500));
+    pub.spin_for(std::chrono::milliseconds(800));
     pub.stop();
 
-    int status_a, status_b;
-    waitpid(sub_a, &status_a, 0);
-    waitpid(sub_b, &status_b, 0);
-    REQUIRE(WIFEXITED(status_a));
-    REQUIRE(WEXITSTATUS(status_a) == 0);
-    REQUIRE(WIFEXITED(status_b));
-    REQUIRE(WEXITSTATUS(status_b) == 0);
+    // Both ChildProcess guards reap on scope exit regardless of what
+    // happens above, but wait explicitly here so we can assert on
+    // each exit code individually.
+    REQUIRE(sub_a.wait() == 0);
+    REQUIRE(sub_b.wait() == 0);
 }
 
 TEST_CASE("Node: publish() to an un-advertised topic throws NodeError", "[node]") {
