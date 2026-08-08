@@ -1,12 +1,12 @@
 # commsys C++ benchmark report
 
-Generated: 2026-08-08 04:00:24 UTC
+Generated: 2026-08-08 15:35:16 UTC
 
 ## Hardware
 ```
 vCPUs: 4
                total        used        free      shared  buff/cache   available
-Mem:            15Gi       979Mi        11Gi        46Mi       3.2Gi        14Gi
+Mem:            15Gi       1.0Gi        11Gi        45Mi       3.2Gi        14Gi
 Swap:          3.0Gi          0B       3.0Gi
 Linux runnervmvrwv9 6.17.0-1020-azure #20~24.04.1-Ubuntu SMP Fri Jun 19 20:09:14 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
 ```
@@ -15,11 +15,38 @@ Linux runnervmvrwv9 6.17.0-1020-azure #20~24.04.1-Ubuntu SMP Fri Jun 19 20:09:14
 ```
 Test project /home/runner/work/cc-code/cc-code/commsys/cpp/build
     Start 1: commsys_tests
-1/1 Test #1: commsys_tests ....................   Passed   27.38 sec
+1/1 Test #1: commsys_tests ....................***Failed   27.38 sec
+Randomness seeded to: 388051552
 
-100% tests passed, 0 tests failed out of 1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+commsys_tests is a Catch2 v3.4.0 host application.
+Run with -? for options
 
-Total Test time (real) =  27.49 sec
+-------------------------------------------------------------------------------
+Node: keep_latest subscriber sees the freshest value, not a backlog
+-------------------------------------------------------------------------------
+/home/runner/work/cc-code/cc-code/commsys/cpp/node/tests/test_node.cpp:109
+...............................................................................
+
+/home/runner/work/cc-code/cc-code/commsys/cpp/node/tests/test_node.cpp:160: FAILED:
+  REQUIRE( rc == 0 )
+with expansion:
+  1 == 0
+
+===============================================================================
+test cases:   49 |   48 passed | 1 failed
+assertions: 1878 | 1877 passed | 1 failed
+
+
+
+0% tests passed, 1 tests failed out of 1
+
+Total Test time (real) =  27.45 sec
+
+The following tests FAILED:
+	  1 - commsys_tests (Failed)
+Errors while running CTest
+(unit tests unavailable or failed -- see above; Catch2 may not be installed)
 ```
 
 ## Smoke tests
@@ -34,13 +61,13 @@ Total Test time (real) =  27.49 sec
 subscriber exit status: 0
 -- test_node_udp_latest --
 [udp] received 5/5
-[keep_latest] sent=361179 (unpaced firehose)
-[keep_latest] dispatched=359143
-[keep_latest] mean=0.0067ms p50=0.0065ms p99=0.0097ms max=0.2062ms
+[keep_latest] sent=350346 (unpaced firehose)
+[keep_latest] dispatched=348653
+[keep_latest] mean=0.0069ms p50=0.0067ms p99=0.0100ms max=0.0361ms
 -- test_ring_stress --
-[fifo ring] sent=289105 (unpaced firehose)
-[fifo ring] dispatched=289105 drops=0
-[fifo ring] mean=0.0101ms p50=0.0085ms p99=0.0292ms max=0.9405ms
+[fifo ring] sent=547375 (unpaced firehose)
+[fifo ring] dispatched=547375 drops=0
+[fifo ring] mean=0.0080ms p50=0.0053ms p99=0.0262ms max=1.1655ms
 -- test_typed_api --
 [sub] received 5 ImuSample messages
 [sub] received 3 RawBytes blobs
@@ -57,35 +84,35 @@ Same scenario matrix as benchmark_report.py, same machine, same 2.5s steady-stat
 
 | scenario                     |    msgs |  drops |    bandwidth |      mean |       p99 |       max |
 |------------------------------|---------|--------|--------------|-----------|-----------|-----------|
-| 500Hz shm                    |     1209 |      0 |     0.0155 MB/s |    0.0010ms |    0.0247ms |    0.0731ms |
-| 1000Hz shm                   |     2345 |      0 |     0.0300 MB/s |    0.0009ms |    0.0225ms |    0.0299ms |
-| 2000Hz shm                   |     4417 |      0 |     0.0565 MB/s |    0.0008ms |    0.0136ms |    0.0268ms |
-| 5000Hz shm                   |     9367 |      0 |     0.1199 MB/s |    0.0007ms |    0.0115ms |    0.0428ms |
-| 10000Hz shm                  |    15062 |      0 |     0.1928 MB/s |    0.0006ms |    0.0093ms |    0.0225ms |
-| 500Hz udp                    |     1209 |      0 |     0.0155 MB/s |    0.0094ms |    0.0156ms |    0.0701ms |
-| 1000Hz udp                   |     2338 |      0 |     0.0299 MB/s |    0.0104ms |    0.0184ms |    0.0607ms |
-| 2000Hz udp                   |     4418 |      0 |     0.0566 MB/s |    0.0078ms |    0.0126ms |    0.0563ms |
-| 5000Hz udp                   |     9406 |      0 |     0.1204 MB/s |    0.0079ms |    0.0137ms |    0.0571ms |
-| 10000Hz udp                  |    15001 |      0 |     0.1920 MB/s |    0.0084ms |    0.0154ms |    0.0564ms |
+| 500Hz shm                    |     1209 |      0 |     0.0155 MB/s |    0.0009ms |    0.0130ms |    0.0459ms |
+| 1000Hz shm                   |     2341 |      0 |     0.0300 MB/s |    0.0007ms |    0.0094ms |    0.0135ms |
+| 2000Hz shm                   |     4401 |      0 |     0.0563 MB/s |    0.0007ms |    0.0095ms |    0.0293ms |
+| 5000Hz shm                   |     9437 |      0 |     0.1208 MB/s |    0.0006ms |    0.0076ms |    0.0165ms |
+| 10000Hz shm                  |    15179 |      0 |     0.1943 MB/s |    0.0006ms |    0.0070ms |    0.0300ms |
+| 500Hz udp                    |     1209 |      0 |     0.0155 MB/s |    0.0092ms |    0.0162ms |    0.0518ms |
+| 1000Hz udp                   |     2343 |      0 |     0.0300 MB/s |    0.0089ms |    0.0157ms |    0.0730ms |
+| 2000Hz udp                   |     4415 |      0 |     0.0565 MB/s |    0.0083ms |    0.0143ms |    0.0528ms |
+| 5000Hz udp                   |     9351 |      0 |     0.1197 MB/s |    0.0088ms |    0.0159ms |    0.0568ms |
+| 10000Hz udp                  |    15078 |      0 |     0.1930 MB/s |    0.0080ms |    0.0130ms |    0.0596ms |
 
 ## 2. LaserScan rate sweep (2000-point-equivalent payload, ~8KB)
 
 | scenario                     |    msgs |  drops |    bandwidth |      mean |       p99 |       max |
 |------------------------------|---------|--------|--------------|-----------|-----------|-----------|
-| 10Hz shm                     |       25 |      0 |     0.0806 MB/s |    0.0341ms |    0.0498ms |    0.0498ms |
-| 20Hz shm                     |       50 |      0 |     0.1613 MB/s |    0.0316ms |    0.0505ms |    0.0505ms |
-| 40Hz shm                     |      100 |      0 |     0.3226 MB/s |    0.0253ms |    0.0501ms |    0.0501ms |
-| 60Hz shm                     |      150 |      0 |     0.4838 MB/s |    0.0223ms |    0.0496ms |    0.0579ms |
-| 10Hz udp                     |       25 |      0 |     0.0806 MB/s |    0.0921ms |    0.1290ms |    0.1290ms |
-| 20Hz udp                     |       50 |      0 |     0.1613 MB/s |    0.0834ms |    0.1297ms |    0.1297ms |
-| 40Hz udp                     |      100 |      0 |     0.3226 MB/s |    0.0686ms |    0.1191ms |    0.1191ms |
-| 60Hz udp                     |      150 |      0 |     0.4838 MB/s |    0.0622ms |    0.0947ms |    0.1189ms |
+| 10Hz shm                     |       25 |      0 |     0.0806 MB/s |    0.0252ms |    0.0347ms |    0.0347ms |
+| 20Hz shm                     |       50 |      0 |     0.1613 MB/s |    0.0230ms |    0.0491ms |    0.0491ms |
+| 40Hz shm                     |      100 |      0 |     0.3226 MB/s |    0.0215ms |    0.0502ms |    0.0502ms |
+| 60Hz shm                     |      150 |      0 |     0.4838 MB/s |    0.0175ms |    0.0358ms |    0.0582ms |
+| 10Hz udp                     |       25 |      0 |     0.0806 MB/s |    0.0855ms |    0.1174ms |    0.1174ms |
+| 20Hz udp                     |       50 |      0 |     0.1613 MB/s |    0.0757ms |    0.1159ms |    0.1159ms |
+| 40Hz udp                     |      100 |      0 |     0.3226 MB/s |    0.0622ms |    0.1126ms |    0.1126ms |
+| 60Hz udp                     |      150 |      0 |     0.4838 MB/s |    0.0569ms |    0.0695ms |    0.1118ms |
 
 ## 3. Unpaced firehose (worst case, no publisher pacing at all)
 
 | scenario                     |    msgs |  drops |    bandwidth |      mean |       p99 |       max |
 |------------------------------|---------|--------|--------------|-----------|-----------|-----------|
-| 64KB FIFO ring, shm          |   266121 |      0 |  8720.2529 MB/s |    0.0104ms |    0.0291ms |    0.6818ms |
+| 64KB FIFO ring, shm          |   542162 |      0 | 17765.5644 MB/s |    0.0075ms |    0.0263ms |    0.7355ms |
 
 
 ## CPU core affinity comparison
@@ -98,12 +125,12 @@ machine this is structurally a no-op (nothing to isolate from).
 nproc=4
 
 === Unpinned (OS default scheduling) ===
-unpinned                                 sent=  299893 dispatched=  299893 drops=     0 mean=  0.0095ms p50=  0.0084ms p99=  0.0283ms max=   0.6772ms
-unpinned                                 sent=  299751 dispatched=  299751 drops=     0 mean=  0.0093ms p50=  0.0083ms p99=  0.0278ms max=   0.6344ms
-unpinned                                 sent=  297155 dispatched=  297155 drops=     0 mean=  0.0096ms p50=  0.0084ms p99=  0.0284ms max=   0.6902ms
+unpinned                                 sent=  272389 dispatched=  272389 drops=     0 mean=  0.0102ms p50=  0.0088ms p99=  0.0293ms max=   0.8930ms
+unpinned                                 sent=  397619 dispatched=  397619 drops=     0 mean=  0.0081ms p50=  0.0064ms p99=  0.0264ms max=   0.9682ms
+unpinned                                 sent=  456458 dispatched=  456458 drops=     0 mean=  0.0081ms p50=  0.0057ms p99=  0.0268ms max=   0.8935ms
 
 === Pinned: publisher->CPU0, subscriber->CPU1 ===
-pinned                                   sent=  339759 dispatched=  339759 drops=     0 mean=  0.0130ms p50=  0.0082ms p99=  0.0509ms max=   0.9380ms
-pinned                                   sent= 1073567 dispatched=       0 drops=     0 mean=  0.0000ms p50=  0.0000ms p99=  0.0000ms max=   0.0000ms
-pinned                                   sent=  372688 dispatched=  372688 drops=     0 mean=  0.0138ms p50=  0.0077ms p99=  0.0525ms max=   0.9237ms
+pinned                                   sent=  320115 dispatched=  320115 drops=     0 mean=  0.0133ms p50=  0.0085ms p99=  0.0503ms max=   1.2256ms
+pinned                                   sent=  243719 dispatched=  243719 drops=     0 mean=  0.0127ms p50=  0.0101ms p99=  0.0528ms max=   0.8666ms
+pinned                                   sent=  346962 dispatched=  346962 drops=     0 mean=  0.0142ms p50=  0.0082ms p99=  0.0519ms max=   1.2955ms
 ```
