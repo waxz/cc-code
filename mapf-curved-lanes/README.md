@@ -46,10 +46,26 @@ tests/                    Unit tests for lane-graph geometry and conflict detect
 
 ## Status
 
-Early-stage research code: the lane-graph representation, conflict-tree scaffold, and
-benchmark instance generator are implemented and runnable. The load-dependent Reeds–Shepp
-planner and the full baseline comparisons (grid-CBS, CL-CBS, HCBS) described in
-`docs/benchmark_plan.md` are stubbed out with clear TODOs — see each module's docstring.
+Early-stage research code, updated as of the most recent solver work: the
+lane-graph representation, Frenet-frame conflict checking, the CBS/PBS high-level
+conflict-tree search, both low-level planners (forklift with load-dependent
+curvature/speed, quadruped holonomic), and a classical grid-CBS baseline are
+implemented, unit-tested (25 tests), and wired into an end-to-end solver
+(`src/solver.py`) with a real solver-vs-baseline comparison script
+(`src/benchmark/run_solver_benchmark.py`).
+
+Known limitations, found by actually running the solver rather than by inspection
+(see `docs/benchmark_plan.md` for the full writeup):
+- The low-level planners fix their route via Dijkstra once and only insert waits
+  under a constraint -- they never reroute around a contested segment. On sparse
+  graphs with 3+ agents this can make the search genuinely incomplete (verified: a
+  non-converging instance was traced and shown to plateau at a fixed cost across
+  hundreds of branches, not just need a bigger expansion budget).
+- The junction conflict checker uses a node-occupancy time-interval approximation
+  rather than true swept-volume geometry (conservative, not tight -- see
+  `src/lane_graph/conflicts.py::JunctionConflictChecker`'s docstring).
+- A literal CL-CBS/HCBS reimplementation (as opposed to the classical grid-CBS
+  baseline actually implemented) remains future work.
 
 ## Quick start
 
@@ -57,7 +73,8 @@ planner and the full baseline comparisons (grid-CBS, CL-CBS, HCBS) described in
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python -m src.benchmark.generate_instances --out data/instances --n-agents 10 --n-instances 5
-python -m src.benchmark.run_baseline --instances data/instances --solver grid_cbs
+python -m src.benchmark.run_solver_benchmark --out results/solver_benchmark.csv \
+  --map-sizes small --agent-counts 2 3 4 --n-instances 3
 ```
 
 ## License

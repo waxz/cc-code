@@ -50,14 +50,24 @@ class Instance:
 
 
 def _grid_lane_graph(extent: float, junction_density: str, rng: random.Random) -> LaneGraph:
-    """Build a simple grid-of-junctions lane graph as a starting point.
+    """Build a lane graph: a regular grid of straight segments, plus curved diagonal
+    "corner-cut" shortcuts at some junctions.
 
-    Not the final curved-lane map generator -- this produces straight segments on a
-    regular junction grid, spaced according to junction_density, as a structurally
-    valid LaneGraph that downstream code can already run against. Replacing straight
-    segments with clothoid arcs between the same junctions (to get genuinely curved
-    lanes, per the research proposal) is a follow-up: see the `curvature` field on
-    LaneSegment, which this function currently leaves at 0.0 (straight).
+    The straight grid alone (as this function used to produce, see git history)
+    means the load-dependent curvature constraint in ForkliftPlanner never actually
+    binds -- every segment has curvature 0.0, which is trivially feasible for any
+    load state. The diagonal shortcuts added below give each map some segments with
+    nonzero curvature, tight enough that an empty forklift can take them but a laden
+    one is forced onto the straight detour -- this is what makes the load-dependent
+    constraint observable in generated benchmark instances rather than only in the
+    hand-built graphs in tests/test_solver.py.
+
+    Geometric honesty note: shortcut segments carry a real length and curvature
+    value (used correctly by routing/timing/stability-margin calculations), but
+    their `start_pose` is a placeholder, not a geometrically consistent clothoid
+    connecting the two junctions' actual positions -- see LaneSegment.pose_at,
+    which isn't exercised by the solver (routing only uses length/curvature/
+    endpoints) but would need real geometry before this is used for visualization.
     """
     spacing = {"low": 25.0, "medium": 15.0, "high": 8.0}[junction_density]
     n = max(2, int(extent // spacing))
@@ -96,6 +106,40 @@ def _grid_lane_graph(extent: float, junction_density: str, rng: random.Random) -
                         start_pose=(i * spacing, j * spacing, 1.5707963),
                     )
                 )
+
+    # Curved diagonal shortcuts: connect (i,j) to (i+1,j+1) directly, at ~40% of
+    # eligible diagonal pairs, with a radius sampled to sit *between* a typical
+    # empty and laden forklift's minimum turn radius (see
+    # ForkliftKinematicProfile defaults, ~1.6m empty / ~2.4m laden) so the
+    # feasibility split actually shows up rather than being trivially always-yes
+    # or always-no.
+    n_shortcuts_added = 0
+    for i in range(n - 1):
+        for j in range(n - 1):
+            if rng.random() > 0.4:
+                continue
+            radius = rng.uniform(1.8, 2.2)
+            curvature = 1.0 / radius
+            straight_dist = (2 * spacing ** 2) ** 0.5
+            # Arc length for a curve of this radius spanning roughly the diagonal
+            # distance -- approximate (see geometric honesty note above), not an
+            # exact clothoid fit.
+            arc_length = straight_dist * 1.15
+            seg_id = f"shortcut_{i}_{j}_{i+1}_{j+1}"
+            graph.add_segment(
+                LaneSegment(
+                    segment_id=seg_id,
+                    start_node=f"n_{i}_{j}",
+                    end_node=f"n_{i+1}_{j+1}",
+                    length=arc_length,
+                    width=2.5,  # shortcuts are narrower -- another reason they're
+                                 # not always the best choice even when feasible
+                    curvature=curvature,
+                    start_pose=(i * spacing, j * spacing, 0.7853982),
+                )
+            )
+            n_shortcuts_added += 1
+
     problems = graph.validate()
     if problems:
         raise RuntimeError(f"generated an invalid lane graph: {problems}")

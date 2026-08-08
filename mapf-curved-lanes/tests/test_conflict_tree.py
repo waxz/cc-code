@@ -28,7 +28,7 @@ class TwoAgentHeadOnPlanner:
 def conflict_detector(plans: Dict[str, AgentPlan]):
     a, b = "agent_a", "agent_b"
     if not plans[a].trajectory["waited"] and not plans[b].trajectory["waited"]:
-        return (a, b, TwoAgentHeadOnPlanner.LOCATION, 0.0)
+        return (a, b, TwoAgentHeadOnPlanner.LOCATION, 0.0, 1.0)
     return None
 
 

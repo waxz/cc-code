@@ -19,18 +19,18 @@ scripts rather than embedding build logic in the workflow itself.
 - **[`mapf-curved-lanes/`](mapf-curved-lanes/)** — heterogeneous
   multi-agent path finding (forklifts + quadrupeds) on continuous,
   curved lane-graph maps instead of a grid, with load-dependent
-  kinematics for wheeled agents (a laden forklift's turning radius and
-  stability margin differ from an empty one). Lane-graph geometry,
-  Frenet-frame conflict checking, and the CBS/PBS high-level
-  conflict-tree search are implemented and unit-tested; the
-  per-agent-class low-level planners (Reeds-Shepp for the forklift,
-  a holonomic lattice planner for the quadruped) are scaffolded with
-  the load-dependent kinematic model specified but curve generation
-  not yet wired up — see
+  kinematics for wheeled agents (verified: an empty forklift takes a
+  tight shortcut a laden one is physically forced to detour around).
+  End-to-end solver, both low-level planners, and an independent
+  classical grid-CBS baseline are implemented and unit-tested (25
+  tests); a real solver-vs-baseline comparison script exists and has
+  surfaced a genuine, documented completeness limitation (the
+  low-level planners can wait but not reroute around a contested
+  segment) rather than a clean result — see
   [`mapf-curved-lanes/README.md`](mapf-curved-lanes/README.md) for
   current status and
-  [`mapf-curved-lanes/docs/research_proposal.md`](mapf-curved-lanes/docs/research_proposal.md)
-  for the research motivation and baselines (CL-CBS, HCBS).
+  [`mapf-curved-lanes/docs/benchmark_plan.md`](mapf-curved-lanes/docs/benchmark_plan.md)
+  for the full writeup and next steps.
 
 ## Module conventions
 

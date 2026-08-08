@@ -57,8 +57,13 @@ class CTNode:
         return self.cost < other.cost
 
 
-ConflictDetector = Callable[[Dict[str, AgentPlan]], Optional[Tuple[str, str, str, float]]]
-# Returns (agent_a, agent_b, location, t) for the first conflict found, or None.
+ConflictDetector = Callable[[Dict[str, AgentPlan]], Optional[Tuple[str, str, str, float, float]]]
+# Returns (agent_a, agent_b, location, t_start, t_end) for the first conflict found
+# -- the full overlapping time window, not just its start -- or None. Blocking only
+# an instant rather than the whole window would let a replanned agent walk straight
+# back into the same conflict on the next high-level expansion; see the CHANGELOG
+# entry in git history ("only blocked an infinitesimal instant") for the bug this
+# fixes.
 
 
 class ConflictTreeSearch:
@@ -75,6 +80,7 @@ class ConflictTreeSearch:
         self.low_level_planner = low_level_planner
         self.conflict_detector = conflict_detector
         self.mode = mode
+        self.last_expansions = 0  # set by search(); exposed for benchmark reporting
 
     def _plan_all(self, constraints: List[Constraint]) -> Optional[Dict[str, AgentPlan]]:
         plans: Dict[str, AgentPlan] = {}
@@ -90,6 +96,7 @@ class ConflictTreeSearch:
         """Run the conflict tree search. Returns a conflict-free plan per agent, or
         None if no solution is found within max_expansions high-level node expansions.
         """
+        self.last_expansions = 0
         root_plans = self._plan_all(constraints=[])
         if root_plans is None:
             return None
@@ -107,12 +114,13 @@ class ConflictTreeSearch:
         while open_list and expansions < max_expansions:
             node = heapq.heappop(open_list)
             expansions += 1
+            self.last_expansions = expansions
 
             conflict = self.conflict_detector(node.plans)
             if conflict is None:
                 return node.plans  # conflict-free -- done
 
-            agent_a, agent_b, location, t = conflict
+            agent_a, agent_b, location, t_start, t_end = conflict
             candidates = [agent_a, agent_b] if self.mode == "cbs" else [agent_a]
             # PBS mode: only constrain the lower-priority agent (assumed to be
             # agent_b by convention of the conflict_detector's ordering); this is a
@@ -121,7 +129,7 @@ class ConflictTreeSearch:
 
             for agent in candidates:
                 new_constraint = Constraint(
-                    agent_id=agent, location=location, t_start=t, t_end=t + 1e-6
+                    agent_id=agent, location=location, t_start=t_start, t_end=t_end
                 )
                 new_constraints = node.constraints + [new_constraint]
                 new_plans = self._plan_all(new_constraints)
