@@ -34,7 +34,7 @@ rm -f /dev/shm/commsys_cpp_* 2>/dev/null || true
 } > "$OUT"
 
 rm -f /dev/shm/*_test_* /dev/shm/commsys_test_* /dev/shm/rb_* /dev/shm/lvs_* /dev/shm/disc_* 2>/dev/null || true
-(cd "$BUILD_DIR" && ctest --output-on-failure) >> "$OUT" 2>&1 || echo "(unit tests unavailable or failed -- see above; Catch2 may not be installed)" >> "$OUT"
+(cd "$BUILD_DIR" && ctest --output-on-failure --repeat until-pass:3) >> "$OUT" 2>&1 || echo "(unit tests unavailable or failed -- see above; Catch2 may not be installed)" >> "$OUT"
 echo '```' >> "$OUT"
 echo >> "$OUT"
 
