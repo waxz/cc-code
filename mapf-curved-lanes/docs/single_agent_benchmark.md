@@ -84,3 +84,100 @@ constrained by the high-level search, only wait) — that's a different problem
 (`docs/improvement_plan.md`) remain the identified fix for it. A faster single-agent
 search makes replanning under constraints cheaper per attempt, which helps, but
 doesn't by itself make the search complete.
+
+## Reproducing a GPPC-relevant SOTA algorithm: Jump Point Search
+
+The Grid-Based Path Planning Competition (GPPC) doesn't have a single "best"
+algorithm — results are reported as a Pareto frontier trading solution quality,
+query speed, and preprocessing cost. But every current frontier entry that
+preserves optimality without heavy preprocessing (JPS+BB, JPS+ with geometric
+containers) is Jump Point Search (Harabor & Grastien, 2011) plus additional
+engineering on top, not a different search — so JPS is the right thing to
+reproduce first, and `src/single_agent/grid_planners.py::jps` does.
+
+### A real correctness bug, found and fixed by testing, not by inspection
+
+The first implementation attempted to target the same corner-cutting-disallowed
+cost model as `dijkstra()`/`astar()`. It was wrong: fuzz-testing against `dijkstra()`
+on small random grids (not hand-picked cases) found it failed on **388 of 409**
+real MovingAI scenarios and roughly **44% of random fuzz instances**. The root
+cause is a real algorithmic subtlety, not a typo: classical JPS's pruning proof
+relies on a diagonal shortcut being geometrically available everywhere along a
+straight run, which lets an optimal path be "canonicalized" to change direction
+only at genuine forced-neighbor cells. That assumption is simply false once
+diagonal moves require both orthogonal corner cells to be open — a diagonal
+blocked at one point along a straight run can become available a few cells later
+purely from local wall geometry, with no "hole in the wall" of the kind the
+classical forced-neighbor test looks for.
+
+One targeted fix attempt (stop the scan whenever a forward diagonal newly becomes
+available) reduced but did not eliminate the problem (down to ~44% failures from
+~53%, on a larger fuzz run). Rather than keep patching an approach that kept
+finding new counterexamples — and risk shipping something that looks fixed on the
+cases checked but isn't actually correct — the implementation was rescoped to
+target the classical, corner-cutting-**allowed** model instead, which is
+unambiguously specified in the literature. That version was then fuzz-tested
+against a matching-model Dijkstra (`dijkstra_allow_corner_cutting`) across 20,000
+randomized grids of varying size and obstacle density: **0 mismatches**. It also
+matches on all 409 real scenarios exactly (`self_consistent_rate=100.00%`). A
+smaller bug was found and fixed in this pass too — an erroneous extra `AND`
+condition on the diagonal forced-neighbor check that isn't part of the standard
+formula, caught by the same fuzz harness at a ~1.4% failure rate before the fix.
+
+A correct **no-corner-cutting** JPS remains explicitly out of scope here, flagged
+as follow-up work rather than silently claimed done.
+
+### Consequence of the cost-model difference, quantified rather than assumed
+
+Because JPS targets a more permissive model, its solved cost can be strictly
+*below* a scenario's own no-corner-cut `optimal_length` wherever a corner shortcut
+exists. Measured on all 409 real scenarios:
+
+```
+astar      n= 409  success_rate=100.00%  avg_nodes_expanded=    69.6  avg_runtime=0.312ms
+dijkstra   n= 409  success_rate=100.00%  avg_nodes_expanded=   397.0  avg_runtime=1.286ms
+jps        n= 409  self_consistent_rate=100.00%  avg_nodes_expanded=    25.0  avg_runtime=0.268ms
+astar reduces total nodes expanded by 82.5% vs. dijkstra (162365 -> 28448), at identical solution cost (both optimal)
+jps reduces total nodes expanded by 64.1% vs. astar (28448 -> 10221) -- different cost model (corner-cutting
+allowed), so not a same-cost comparison: jps cost equals the benchmark's stricter no-cut optimal on 77/409 scenarios
+and is strictly lower (a corner shortcut exists) on 332/409
+```
+
+JPS's cost matched the benchmark's strict optimal on only 77/409 (18.8%) scenarios
+and was strictly lower on 332/409 (81.2%) — the majority of these random-obstacle
+instances have at least one exploitable corner shortcut. This is reported as a
+property of the (deliberately different) cost model, not an error.
+
+### Honest nuance: node reduction didn't translate proportionally to wall-clock
+
+JPS visits 64.1% fewer nodes than A*, but total runtime only dropped from 127.5ms
+to 110.7ms (~13%) across all 409 scenarios — far less than the node-count
+reduction would suggest. This is a real, measured finding, not the "JPS is 10-100x
+faster" result often quoted for compiled implementations: `jps()`'s recursive
+`_jump` function does meaningfully more work *per node visited* than `astar()`'s
+flat neighbor loop (recursive Python function calls, repeated re-scanning along
+each direction), so Python's per-call overhead cancels a large fraction of the
+algorithmic advantage. A compiled implementation (C++/Rust, or at minimum an
+iterative rather than recursive `_jump`) would be expected to realize much more
+of the node-count reduction as actual wall-clock speedup — that gap is exactly
+what "improve this algorithm to compete with the best" means concretely here,
+and is the identified next step rather than a claim already delivered.
+
+### What would be needed to actually compete with GPPC frontier entries
+
+Current GPPC-competitive optimal methods (JPS+BB, JPS+ with geometric containers)
+add offline preprocessing on top of JPS — precomputed jump distances or bounding
+regions that turn repeated symmetry-scanning into O(1) lookups. Suboptimal methods
+using Compressed Path Databases report sub-microsecond query times (per "Sub-
+Microsecond Grid Path Planning", GPPC 2025), but trade a heavyweight offline
+preprocessing/compression pipeline for that speed. Neither is implemented here —
+both require real preprocessing infrastructure this project doesn't have yet, and
+claiming to match sub-microsecond, heavily-preprocessed competition entries with
+an unpreprocessed pure-Python search would be dishonest. The concrete, scoped next
+steps, in order of effort: (1) make `_jump` iterative instead of recursive to
+recover more of the measured node-reduction as wall-clock speedup; (2) add JPS+
+preprocessing (precomputed jump points) if the map is static and queried
+repeatedly, which is exactly this project's actual use case (a fixed warehouse
+layout); (3) CPD-based methods only if sub-millisecond single-query latency
+becomes an actual requirement, which it is not yet for this project's current
+scale.

@@ -46,6 +46,60 @@ def test_astar_expands_fewer_or_equal_nodes_than_dijkstra():
         assert r_a.nodes_expanded <= r_d.nodes_expanded
 
 
+def test_jps_self_consistent_with_matching_corner_cutting_dijkstra_fuzz():
+    """JPS (src/single_agent/grid_planners.py::jps) targets the classical,
+    corner-cutting-ALLOWED cost model, not the same one dijkstra()/astar() use
+    -- see the module docstring above jps() for why, including the debugging
+    history (an initial no-corner-cutting attempt was wrong, found by exactly
+    this kind of fuzz test, not by inspection). This locks that finding in as a
+    regression test: JPS must match a Dijkstra using the SAME (corner-cutting
+    allowed) model exactly, on many random small grids, not just hand-picked
+    ones.
+    """
+    import random
+
+    from src.single_agent.grid_planners import dijkstra_allow_corner_cutting, jps
+    from src.single_agent.movingai_io import GridMap
+
+    rng = random.Random(1)
+    for _ in range(300):
+        w, h = rng.choice([5, 6, 8]), rng.choice([5, 6, 8])
+        density = rng.choice([0.15, 0.25, 0.35])
+        g = [[rng.random() > density for _ in range(w)] for _ in range(h)]
+        g[0][0] = True
+        g[h - 1][w - 1] = True
+        grid = GridMap(width=w, height=h, grid=g)
+        start, goal = (0, 0), (w - 1, h - 1)
+
+        r_cut = dijkstra_allow_corner_cutting(grid, start, goal)
+        r_jps = jps(grid, start, goal)
+
+        assert (r_cut.path is None) == (r_jps.path is None)
+        if r_cut.path is not None:
+            assert abs(r_cut.cost - r_jps.cost) < 1e-6
+
+
+def test_jps_self_consistent_on_real_scenarios():
+    """Same check as above, but on the real MovingAI scenarios rather than only
+    synthetic fuzz grids -- both should agree on every one of the 409 real
+    instances, even though JPS's cost will often be strictly below the
+    scenario file's own no-corner-cut optimal_length (see
+    docs/single_agent_benchmark.md for exactly how often and why that's
+    expected, not a bug).
+    """
+    from src.single_agent.grid_planners import dijkstra_allow_corner_cutting, jps
+
+    grid = load_map(DATA_DIR / "random-32-32-20.map")
+    scens = load_scen(DATA_DIR / "random-32-32-20-random-1.scen")
+    for s in scens:
+        r_cut = dijkstra_allow_corner_cutting(grid, s.start, s.goal)
+        r_jps = jps(grid, s.start, s.goal)
+        assert abs(r_cut.cost - r_jps.cost) < 1e-6
+        # Corner-cutting is a relaxation, so it can only ever match or beat the
+        # stricter no-cut optimal length, never exceed it.
+        assert r_jps.cost <= s.optimal_length + 1e-6
+
+
 def test_unreachable_goal_returns_no_path():
     from src.single_agent.movingai_io import GridMap
 

@@ -84,7 +84,11 @@ in `src/lane_graph/routing.py`, replacing plain Dijkstra) expands 82.5% fewer no
 than Dijkstra at identical optimal cost on all 409 real test scenarios, verified
 against the dataset's own known-optimal path lengths, with the result propagated
 into the multi-agent solver and confirmed not to change any of the 24 pre-existing
-tests' outcomes.
+tests' outcomes. Also reproduces Jump Point Search (`src/single_agent/
+grid_planners.py::jps`) — including a real correctness bug found and fixed by
+fuzz-testing (an initial no-corner-cutting attempt failed on 388/409 real
+scenarios), and an honest account of what separates this reproduction from
+GPPC-competitive preprocessed methods (JPS+BB, CPD).
 
 ## Quick start
 

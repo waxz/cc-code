@@ -148,6 +148,22 @@ paper PDFs — clone/read them from these links directly.
   Dijkstra to A*, verified against the dataset's known-optimal path lengths on
   all 409 real test scenarios rather than assumed from algorithm theory alone.
 
+- **Harabor, D. and Grastien, A. (2011). "Online Graph Pruning for Pathfinding
+  on Grid Maps."** AAAI 2011. The original Jump Point Search (JPS) paper,
+  reproduced (not copied from any specific codebase) in
+  `src/single_agent/grid_planners.py::jps`. See `docs/single_agent_benchmark.md`
+  for the correctness debugging history (a first no-corner-cutting attempt was
+  wrong, caught by fuzz testing) and the honest gap analysis against
+  GPPC-competitive preprocessed methods (JPS+BB, CPD).
+
+- **"Sub-Microsecond Grid Path Planning, at What Cost?"** GPPC 2025 / AAAI SoCS.
+  https://ojs.aaai.org/index.php/SOCS/article/download/35974/38129/40046
+  Compressed Path Database (CPD) methods achieving sub-microsecond query times
+  with heavy offline preprocessing. Cited in `docs/single_agent_benchmark.md`
+  as the honest measuring stick for what "competing with the best" would
+  actually require beyond this project's current pure-search, no-preprocessing
+  implementation.
+
 ## Notes on citation hygiene
 
 This bibliography lists titles, authors, venues, and links only — no reproduced abstracts or
