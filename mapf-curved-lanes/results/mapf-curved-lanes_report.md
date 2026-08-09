@@ -1,12 +1,12 @@
 # mapf-curved-lanes benchmark report
 
-Generated: 2026-08-09 07:36:41 UTC
+Generated: 2026-08-09 08:22:35 UTC
 
 ## Hardware
 ```
 vCPUs: 4
                total        used        free      shared  buff/cache   available
-Mem:            15Gi       1.0Gi        11Gi        47Mi       3.7Gi        14Gi
+Mem:            15Gi       1.0Gi        11Gi        47Mi       3.8Gi        14Gi
 Swap:          3.0Gi          0B       3.0Gi
 Python 3.12.13
 ```
@@ -20,35 +20,37 @@ benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=
 rootdir: /home/runner/work/cc-code/cc-code/mapf-curved-lanes
 plugins: cov-7.1.0, benchmark-5.2.3, asyncio-1.4.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collecting ... collected 25 items
+collecting ... collected 27 items
 
-tests/test_conflict_tree.py::test_cbs_resolves_head_on_conflict PASSED   [  4%]
-tests/test_conflict_tree.py::test_pbs_resolves_head_on_conflict PASSED   [  8%]
-tests/test_conflict_tree.py::test_invalid_mode_raises PASSED             [ 12%]
-tests/test_flatland_smoke.py::test_flatland_installs_and_runs_headless PASSED [ 16%]
-tests/test_grid_cbs.py::test_grid_cbs_resolves_swap_with_room_to_pass PASSED [ 20%]
-tests/test_grid_cbs.py::test_grid_cbs_infeasible_swap_in_single_width_corridor PASSED [ 24%]
-tests/test_grid_cbs.py::test_instance_to_grid_snaps_nodes_to_cells PASSED [ 28%]
-tests/test_lane_graph.py::test_straight_segment_pose_at PASSED           [ 32%]
-tests/test_lane_graph.py::test_curved_segment_quarter_circle PASSED      [ 36%]
-tests/test_lane_graph.py::test_pose_at_out_of_range_raises PASSED        [ 40%]
-tests/test_lane_graph.py::test_graph_add_and_neighbors PASSED            [ 44%]
-tests/test_lane_graph.py::test_graph_validate_catches_missing_node PASSED [ 48%]
-tests/test_lane_graph.py::test_astar_heuristic_matches_dijkstra_on_lane_graph PASSED [ 52%]
-tests/test_single_agent.py::test_load_map_parses_dimensions_and_passability PASSED [ 56%]
-tests/test_single_agent.py::test_load_scen_parses_known_entry_count_and_fields PASSED [ 60%]
-tests/test_single_agent.py::test_dijkstra_and_astar_match_known_optimal_on_real_scenarios PASSED [ 64%]
-tests/test_single_agent.py::test_astar_expands_fewer_or_equal_nodes_than_dijkstra PASSED [ 68%]
-tests/test_single_agent.py::test_unreachable_goal_returns_no_path PASSED [ 72%]
-tests/test_single_agent.py::test_corner_cutting_is_prevented PASSED      [ 76%]
-tests/test_solver.py::test_load_dependent_curvature_changes_route PASSED [ 80%]
-tests/test_solver.py::test_curved_segment_speed_is_capped_so_margin_never_negative PASSED [ 84%]
+tests/test_conflict_tree.py::test_cbs_resolves_head_on_conflict PASSED   [  3%]
+tests/test_conflict_tree.py::test_pbs_resolves_head_on_conflict PASSED   [  7%]
+tests/test_conflict_tree.py::test_invalid_mode_raises PASSED             [ 11%]
+tests/test_flatland_smoke.py::test_flatland_installs_and_runs_headless PASSED [ 14%]
+tests/test_grid_cbs.py::test_grid_cbs_resolves_swap_with_room_to_pass PASSED [ 18%]
+tests/test_grid_cbs.py::test_grid_cbs_infeasible_swap_in_single_width_corridor PASSED [ 22%]
+tests/test_grid_cbs.py::test_instance_to_grid_snaps_nodes_to_cells PASSED [ 25%]
+tests/test_lane_graph.py::test_straight_segment_pose_at PASSED           [ 29%]
+tests/test_lane_graph.py::test_curved_segment_quarter_circle PASSED      [ 33%]
+tests/test_lane_graph.py::test_pose_at_out_of_range_raises PASSED        [ 37%]
+tests/test_lane_graph.py::test_graph_add_and_neighbors PASSED            [ 40%]
+tests/test_lane_graph.py::test_graph_validate_catches_missing_node PASSED [ 44%]
+tests/test_lane_graph.py::test_astar_heuristic_matches_dijkstra_on_lane_graph PASSED [ 48%]
+tests/test_single_agent.py::test_load_map_parses_dimensions_and_passability PASSED [ 51%]
+tests/test_single_agent.py::test_load_scen_parses_known_entry_count_and_fields PASSED [ 55%]
+tests/test_single_agent.py::test_dijkstra_and_astar_match_known_optimal_on_real_scenarios PASSED [ 59%]
+tests/test_single_agent.py::test_astar_expands_fewer_or_equal_nodes_than_dijkstra PASSED [ 62%]
+tests/test_single_agent.py::test_jps_self_consistent_with_matching_corner_cutting_dijkstra_fuzz PASSED [ 66%]
+tests/test_single_agent.py::test_jps_self_consistent_on_real_scenarios PASSED [ 70%]
+tests/test_single_agent.py::test_unreachable_goal_returns_no_path PASSED [ 74%]
+tests/test_single_agent.py::test_corner_cutting_is_prevented PASSED      [ 77%]
+tests/test_solver.py::test_load_dependent_curvature_changes_route PASSED [ 81%]
+tests/test_solver.py::test_curved_segment_speed_is_capped_so_margin_never_negative PASSED [ 85%]
 tests/test_solver.py::test_infeasible_when_only_route_exceeds_curvature_bound_for_both_states PASSED [ 88%]
 tests/test_solver.py::test_solver_resolves_head_on_conflict_cbs PASSED   [ 92%]
 tests/test_solver.py::test_solver_resolves_head_on_conflict_pbs PASSED   [ 96%]
 tests/test_solver.py::test_solver_heterogeneous_fleet_no_conflict_when_independent PASSED [100%]
 
-============================== 25 passed in 2.78s ==============================
+============================== 27 passed in 3.36s ==============================
 ```
 
 ## Single-agent global planner benchmark (real MovingAI dataset)
@@ -59,9 +61,11 @@ foundation the multi-agent low-level planners' routing
 
 ```
 === Single-agent benchmark summary (random-32-32-20, MovingAI) ===
-astar      n= 409  success_rate=100.00%  avg_nodes_expanded=    69.6  avg_runtime=0.345ms
-dijkstra   n= 409  success_rate=100.00%  avg_nodes_expanded=   397.0  avg_runtime=1.451ms
+astar      n= 409  success_rate=100.00%  avg_nodes_expanded=    69.6  avg_runtime=0.344ms
+dijkstra   n= 409  success_rate=100.00%  avg_nodes_expanded=   397.0  avg_runtime=1.455ms
+jps        n= 409  self_consistent_rate=100.00%  avg_nodes_expanded=    25.0  avg_runtime=0.329ms
 astar reduces total nodes expanded by 82.5% vs. dijkstra (162365 -> 28448), at identical solution cost (both optimal)
+jps reduces total nodes expanded by 64.1% vs. astar (28448 -> 10221) -- different cost model (corner-cutting allowed), so not a same-cost comparison: jps cost equals the benchmark's stricter no-cut optimal on 77/409 scenarios and is strictly lower (a corner shortcut exists) on 332/409
 
 wrote /home/runner/work/cc-code/cc-code/mapf-curved-lanes/results/single_agent_benchmark.csv
 ```
@@ -72,27 +76,27 @@ wrote /home/runner/work/cc-code/cc-code/mapf-curved-lanes/results/single_agent_b
 wrote small_medium_a10_m50-50_000
 wrote small_medium_a10_m50-50_001
 wrote small_medium_a10_m50-50_002
-  (small map, 10 agents, 3 instances: 0.157s)
+  (small map, 10 agents, 3 instances: 0.154s)
 wrote small_medium_a25_m50-50_000
 wrote small_medium_a25_m50-50_001
 wrote small_medium_a25_m50-50_002
-  (small map, 25 agents, 3 instances: 0.156s)
+  (small map, 25 agents, 3 instances: 0.153s)
 wrote medium_medium_a10_m50-50_000
 wrote medium_medium_a10_m50-50_001
 wrote medium_medium_a10_m50-50_002
-  (medium map, 10 agents, 3 instances: 0.162s)
+  (medium map, 10 agents, 3 instances: 0.159s)
 wrote medium_medium_a25_m50-50_000
 wrote medium_medium_a25_m50-50_001
 wrote medium_medium_a25_m50-50_002
-  (medium map, 25 agents, 3 instances: 0.159s)
+  (medium map, 25 agents, 3 instances: 0.158s)
 wrote large_medium_a10_m50-50_000
 wrote large_medium_a10_m50-50_001
 wrote large_medium_a10_m50-50_002
-  (large map, 10 agents, 3 instances: 0.211s)
+  (large map, 10 agents, 3 instances: 0.212s)
 wrote large_medium_a25_m50-50_000
 wrote large_medium_a25_m50-50_001
 wrote large_medium_a25_m50-50_002
-  (large map, 25 agents, 3 instances: 0.212s)
+  (large map, 25 agents, 3 instances: 0.214s)
 ```
 
 ## Solver comparison: ours_full vs. classical grid-CBS baseline
@@ -104,27 +108,27 @@ more compute than a CI job budget allows.
 
 ```
   small_medium_a2_000                 ours_full  success=True  cost=  26.587 runtime=0.0002s
-  small_medium_a2_000                 grid_cbs   success=False cost=       0 runtime=2.3141s
+  small_medium_a2_000                 grid_cbs   success=False cost=       0 runtime=2.2801s
   small_medium_a2_001                 ours_full  success=True  cost=    35.0 runtime=0.0001s
   small_medium_a2_001                 grid_cbs   success=True  cost=      12 runtime=0.0001s
   small_medium_a2_002                 ours_full  success=True  cost=  45.833 runtime=0.0001s
   small_medium_a2_002                 grid_cbs   success=True  cost=      12 runtime=0.0002s
-  small_medium_a3_000                 ours_full  success=False cost=     0.0 runtime=0.0747s
-  small_medium_a3_000                 grid_cbs   success=False cost=       0 runtime=2.4956s
-  small_medium_a3_001                 ours_full  success=False cost=     0.0 runtime=0.0886s
-  small_medium_a3_001                 grid_cbs   success=False cost=       0 runtime=2.6079s
+  small_medium_a3_000                 ours_full  success=False cost=     0.0 runtime=0.0736s
+  small_medium_a3_000                 grid_cbs   success=False cost=       0 runtime=2.5012s
+  small_medium_a3_001                 ours_full  success=False cost=     0.0 runtime=0.0873s
+  small_medium_a3_001                 grid_cbs   success=False cost=       0 runtime=2.6379s
   small_medium_a3_002                 ours_full  success=True  cost=    39.0 runtime=0.0002s
-  small_medium_a3_002                 grid_cbs   success=False cost=       0 runtime=0.0504s
-  small_medium_a4_000                 ours_full  success=False cost=     0.0 runtime=0.1807s
-  small_medium_a4_000                 grid_cbs   success=False cost=       0 runtime=0.2948s
-  small_medium_a4_001                 ours_full  success=False cost=     0.0 runtime=0.1599s
-  small_medium_a4_001                 grid_cbs   success=False cost=       0 runtime=1.3838s
-  small_medium_a4_002                 ours_full  success=False cost=     0.0 runtime=0.0707s
-  small_medium_a4_002                 grid_cbs   success=False cost=       0 runtime=0.1691s
+  small_medium_a3_002                 grid_cbs   success=False cost=       0 runtime=0.0498s
+  small_medium_a4_000                 ours_full  success=False cost=     0.0 runtime=0.1796s
+  small_medium_a4_000                 grid_cbs   success=False cost=       0 runtime=0.2911s
+  small_medium_a4_001                 ours_full  success=False cost=     0.0 runtime=0.1585s
+  small_medium_a4_001                 grid_cbs   success=False cost=       0 runtime=1.3775s
+  small_medium_a4_002                 ours_full  success=False cost=     0.0 runtime=0.0697s
+  small_medium_a4_002                 grid_cbs   success=False cost=       0 runtime=0.1661s
 
 === Summary ===
-grid_cbs    n=   9  success_rate=22.22%  avg_runtime=1.0351s  avg_cost_when_solved=12.00
-ours_full   n=   9  success_rate=44.44%  avg_runtime=0.0639s  avg_cost_when_solved=36.60
+grid_cbs    n=   9  success_rate=22.22%  avg_runtime=1.0338s  avg_cost_when_solved=12.00
+ours_full   n=   9  success_rate=44.44%  avg_runtime=0.0633s  avg_cost_when_solved=36.60
 
 wrote /home/runner/work/cc-code/cc-code/mapf-curved-lanes/results/solver_benchmark.csv
 ```
