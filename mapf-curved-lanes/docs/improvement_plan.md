@@ -37,22 +37,57 @@ on paper and falls apart under real execution.
 
 ## 2. Simulator comparison and selection
 
+**Revision, based on a corrected requirement**: a physics-engine simulator
+(Gazebo/Isaac Sim/Webots/CoppeliaSim, as originally evaluated below) is not
+actually needed for this project's current goals -- validating coordination
+behavior (cycle time, latency, success rate) doesn't require rigid-body contact
+dynamics, and running one in GitHub Actions is a real cost: no GPU, no display, and
+these simulators either need a heavier install than a CI runner should carry or a
+ROS 2 toolchain this project doesn't otherwise depend on. The right question isn't
+"which physics simulator" but "which no-physics, CI-installable multi-agent
+execution environment."
+
+**Decision: flatland-rl.** Verified, not just chosen on paper: it installs via
+`pip install flatland-rl` alone (no GPU, no display, no ROS), and a 5-agent,
+20-step headless episode ran in well under a second in this project's own sandbox
+(`tests/test_flatland_smoke.py`, which now runs as part of the normal CI test job
+alongside the rest of the suite). It also has real industrial pedigree: built and
+maintained by SBB, Deutsche Bahn, and SNCF for actual railway vehicle-rescheduling
+problems, and it is itself already run inside automated CI/evaluation pipelines
+(the AIcrowd Flatland Challenge's own evaluator) -- so "runs unattended in CI" isn't
+a hopeful assumption about it, it's the tool's own normal operating mode.
+
+**Known translation cost, disclosed rather than hidden**: flatland-rl models a
+grid + rail-topology (restricted transitions, switches) rather than this project's
+continuous, curved Frenet-frame lane-graph. Using it means translating instances
+similarly to how `src/baselines/grid_cbs.py::instance_to_grid` already translates
+for the classical grid-CBS baseline -- a real, honest loss of fidelity (no
+continuous curvature, no load-dependent kinematics as flatland-rl models them
+natively), not a perfect match. That translation is the concrete next
+implementation step, not yet built.
+
+<details>
+<summary>Original physics-simulator comparison (kept for reference; superseded by the decision above given the corrected no-physics/CI requirement)</summary>
+
 | Simulator | ROS 2 fit | Multi-robot scale | Physics fidelity | Fit for this project |
 |---|---|---|---|---|
-| **Gazebo (Harmonic)** | Native (`ros_gz_bridge`), the standard ROS 2 sim | Good; CPU/RTF degrades above ~20 agents on identical hardware (independent Gazebo-vs-Webots study) | Solid rigid-body physics, realistic sensor plugins | **Best fit**: matches the MRP-Bench pipeline already cited in `docs/related_work.md` (RMF traffic editor → Gazebo → ROS 2), has both wheeled and legged robot model support, free |
-| **Webots** | Good, more turnkey | Better CPU headroom than Gazebo at swarm scale on modest hardware | Serviceable, less detailed sensor modeling | Good secondary option specifically for the >20-agent stress tests where Gazebo's RTF drops |
-| **NVIDIA Isaac Sim** | Good (ROS 2 bridge) | Scales via GPU parallelism, built for perception-heavy work | Photorealistic, PhysX rigid-body | Overkill here — this project is about coordination, not perception/sim-to-real transfer; steep GPU/learning-curve cost buys nothing we need yet |
-| **CoppeliaSim** | Decent | Strong for robot-arm and small multi-robot setups | Multiple physics engines, configurable | Not a clear advantage over Gazebo for a wheeled+legged fleet coordination testbed |
+| **Gazebo (Harmonic)** | Native (`ros_gz_bridge`), the standard ROS 2 sim | Good; CPU/RTF degrades above ~20 agents on identical hardware (independent Gazebo-vs-Webots study) | Solid rigid-body physics, realistic sensor plugins | Would have been the pick if physics fidelity were required; ruled out here on CI-weight grounds, not capability |
+| **Webots** | Good, more turnkey | Better CPU headroom than Gazebo at swarm scale on modest hardware | Serviceable, less detailed sensor modeling | Same issue -- a real install, not a CI-lightweight one |
+| **NVIDIA Isaac Sim** | Good (ROS 2 bridge) | Scales via GPU parallelism, built for perception-heavy work | Photorealistic, PhysX rigid-body | Needs a GPU GitHub Actions runners don't have by default; also solves a problem (perception) this project doesn't have |
+| **CoppeliaSim** | Decent | Strong for robot-arm and small multi-robot setups | Multiple physics engines, configurable | Same CI-weight issue as the others |
 
-**Decision: Gazebo (Harmonic) as the primary testbed**, for three concrete reasons:
-it's already the tool the related-work bibliography's MRP-Bench pipeline uses (so
-physical-plausibility validation and this testbed can share infrastructure), it has
-native ROS 2 integration matching the HCBS/CL-CBS baseline literature's own
-toolchains, and it supports both a car-like forklift model (Ackermann or
-skid-steer plugin) and a legged quadruped model (existing ROS 2 packages for
-Unitree/ANYmal-class robots) without switching simulators mid-project. Webots is
-kept as the designated fallback specifically for agent-count scaling tests, where
-its lower CPU overhead matters more than Gazebo's richer sensor fidelity.
+</details>
+
+## 2a. What a Gazebo (or similar) testbed would still be for
+
+This isn't a permanent rejection of physics simulation -- it's a statement that
+it's not the *next* step. If/when the project reaches physical-plausibility
+validation (tracking error, actuator limits, sensor noise actually affecting
+success rate, as opposed to coordination logic alone), a physics simulator
+becomes necessary again, and the original comparison above (Gazebo Harmonic,
+matching the MRP-Bench pipeline already cited in `docs/related_work.md`) is the
+starting point for that later phase -- just run manually or in a separate,
+longer-running workflow, not as part of the fast CI loop this decision is about.
 
 ## 3. Metrics, defined precisely
 
@@ -135,20 +170,28 @@ measured justification for moving to MPC rather than adopting it speculatively.
 
 ## 6. Phased roadmap
 
-1. **Testbed stand-up**: Gazebo (Harmonic) world matching the existing lane-graph
-   maps (`src/benchmark/generate_instances.py`'s output translated to a Gazebo
-   world), with a car-like forklift model and a legged quadruped model. Drive both
-   from the existing CBS/PBS solver's output trajectories open-loop first, to get a
-   baseline cycle time / latency / success rate before changing any algorithm.
+1. **Testbed stand-up (revised)**: translate the existing lane-graph instances
+   (`src/benchmark/generate_instances.py`) into flatland-rl's grid+rail
+   representation (`tests/test_flatland_smoke.py` proves the dependency itself is
+   CI-viable; the translation layer is the actual next-work item, in the spirit of
+   `src/baselines/grid_cbs.py::instance_to_grid`). Drive it from the existing
+   CBS/PBS solver's output trajectories first, to get a baseline cycle time /
+   latency / success rate before changing any algorithm — this runs in the normal
+   CI test job, no separate infrastructure needed.
 2. **Global planner upgrade**: implement PIBT as an additional `solve_instance`
    mode in `src/solver.py`, targeting the documented wait-only incompleteness
-   directly. Re-run the same Gazebo comparison; expect success rate and throughput
-   to improve on the denser instances that currently fail outright.
-3. **Local safety layer**: add ORCA underneath the global plan in Gazebo, and
-   measure collision rate / near-miss rate under injected tracking error — this is
-   the first point where "success rate" becomes a real, physics-grounded number
-   rather than a planning-time-only one.
-4. **Stretch**: MPC/MPPI local layer, only if phase 3 shows ORCA's known
+   directly. Re-run the same flatland-rl comparison; expect success rate and
+   throughput to improve on the denser instances that currently fail outright.
+3. **Local safety layer**: add ORCA underneath the global plan, and measure
+   collision rate / near-miss rate under injected tracking error (flatland-rl
+   supports per-agent malfunction/delay injection natively, a reasonable stand-in
+   for tracking error at this stage).
+4. **Physical-plausibility validation (later, separate from the fast CI loop)**:
+   only once the above are working and worth validating against real dynamics,
+   stand up the Gazebo Harmonic testbed described in section 2's superseded
+   comparison — run manually or in a separate, longer workflow, not blocking every
+   push.
+5. **Stretch**: MPC/MPPI local layer, only if phase 3 shows ORCA's known
    oscillation/deadlock modes actually binding in this project's curved-lane,
    load-dependent setting.
 

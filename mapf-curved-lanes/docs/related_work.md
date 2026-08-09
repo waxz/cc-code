@@ -75,8 +75,17 @@ paper PDFs — clone/read them from these links directly.
 - **"A Benchmark for Multi-Robot Planning in Realistic, Unstructured Environments" (MRP-Bench).**
   ICRA 2023. https://idm-lab.org/bib/abstracts/papers/icra23.pdf
   RMF traffic editor + Gazebo world generation + ROS2 orchestration for building-scale
-  multi-robot benchmarking. Used in `docs/benchmark_plan.md` as the recommended tool for
-  physical-plausibility validation rather than building a simulator from scratch.
+  multi-robot benchmarking. Referenced for the later physical-plausibility-validation
+  phase in `docs/improvement_plan.md`, not the current CI testbed (see flatland-rl below).
+
+- **Flatland (flatland-rl).** https://github.com/flatland-association/flatland-rl
+  Open-source multi-agent grid+rail-topology simulator built and maintained by SBB,
+  Deutsche Bahn, and SNCF for railway vehicle rescheduling; no physics engine, pip
+  installable, itself run inside automated CI/evaluation pipelines (the AIcrowd
+  Flatland Challenge). Chosen in `docs/improvement_plan.md` as this project's CI
+  testbed once the requirement was clarified to "no physics simulation, must run in
+  GitHub Actions" -- verified by actually installing and running it
+  (`tests/test_flatland_smoke.py`), not just cited.
 
 ## Industrial-scale global planning algorithms (see docs/improvement_plan.md)
 

@@ -68,7 +68,9 @@ Known limitations, found by actually running the solver rather than by inspectio
   baseline actually implemented) remains future work.
 
 See [`docs/improvement_plan.md`](docs/improvement_plan.md) for the evaluated next
-steps: a Gazebo-based physics testbed, precisely-defined lifelong-MAPF metrics
+steps: a CI-viable simulator testbed (flatland-rl -- chosen and verified once the
+requirement was clarified to no-physics-simulation, must-run-in-GitHub-Actions; see
+`tests/test_flatland_smoke.py`), precisely-defined lifelong-MAPF metrics
 (cycle time, latency, optimal score, success rate, throughput), and specific
 published algorithms to address the two limitations above -- PIBT/db-LaCAM for the
 global planner's wait-only incompleteness, and ORCA (with MPC/MPPI flagged as a
