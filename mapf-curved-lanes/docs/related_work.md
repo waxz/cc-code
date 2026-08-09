@@ -100,6 +100,26 @@ paper PDFs — clone/read them from these links directly.
   project's other solvers -- see `docs/algorithm_comparison_report.md` for
   measured results (not just the cited claims).
 
+- **Kei18/pypibt.** https://github.com/Kei18/pypibt (MIT License). Minimal
+  Python reference implementation of PIBT by the algorithm's original author.
+  Cloned and studied (not vendored) to compare this project's own PIBT
+  implementation against the published algorithm's actual design choices --
+  found this project's static-priority simplification understated the gap
+  (the reference uses dynamic, starvation-free priorities even in the
+  near-one-shot setting). See `docs/pibt_dynamic_priority_results.md` for the
+  independently-written implementation and the honest measured result of
+  adopting it.
+
+- **Kei18/lacam0, Kei18/lacam2.** https://github.com/Kei18/lacam0,
+  https://github.com/Kei18/lacam2 (MIT License). LaCAM/LaCAM*: uses PIBT as a
+  configuration generator inside a complete, eventually-optimal two-level
+  search with tree rewiring. Identified as the more directly relevant SOTA
+  algorithm for this project's own documented CBS corridor-case
+  incompleteness (`docs/space_time_routing_results.md`), reviewed at the
+  documentation level, and flagged as future work rather than attempted in
+  the same session as the smaller PIBT comparison above -- see
+  `docs/pibt_dynamic_priority_results.md` section 6.
+
 - **Jiang, Wang, Veerapaneni, Duhan, Sartoretti, Li. "Deploying Ten Thousand
   Robots: Scalable Imitation Learning for Lifelong Multi-Agent Path Finding."**
   ICRA 2025. https://arxiv.org/abs/2410.21415

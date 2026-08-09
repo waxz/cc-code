@@ -83,3 +83,36 @@ def test_pibt_collision_free_across_many_random_instances():
     # avoids CI flakiness from trial-count variance while still catching a
     # regression that tanks the success rate.
     assert n_successes / n_trials > 0.6
+
+
+def test_dynamic_priority_matches_static_on_small_instance_corpus():
+    """Locks in a real, counterintuitive finding from
+    docs/pibt_dynamic_priority_results.md: dynamic priority (the literature's
+    starvation-free scheme, adopted from studying Kei18/pypibt -- see that
+    module's docstring) produces EXACTLY identical success/failure to static
+    priority on this project's tested instance distribution, because
+    starvation requires sustained contention over many timesteps that these
+    short, one-shot instances don't generate. This is not a "the feature does
+    nothing" bug -- it's a real property of the tested instance distribution,
+    verified (not assumed) by checking the failures aren't a budget artifact.
+    A future change that makes dynamic priority start affecting outcomes here
+    should show up as a reviewable, intentional test change, not a silent
+    behavior shift.
+    """
+    import random
+
+    rng = random.Random(0)
+    n_trials = 100
+    for trial in range(n_trials):
+        w, h = rng.randint(4, 10), rng.randint(4, 10)
+        n_agents = rng.randint(2, 5)
+        all_cells = [(x, y) for x in range(w) for y in range(h)]
+        rng.shuffle(all_cells)
+        chosen = all_cells[: 2 * n_agents]
+        starts, goals = chosen[:n_agents], chosen[n_agents:]
+        agents = [PIBTAgent(f"a{i}", starts[i], goals[i]) for i in range(n_agents)]
+        r_static = solve_pibt(agents, width=w, height=h, max_timesteps=200,
+                               priority_seed=trial, dynamic_priority=False)
+        r_dynamic = solve_pibt(agents, width=w, height=h, max_timesteps=200,
+                                priority_seed=trial, dynamic_priority=True)
+        assert r_static.success == r_dynamic.success, f"diverged at trial {trial}"

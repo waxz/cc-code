@@ -27,17 +27,23 @@ maps without articulation points typically satisfy this in practice, though it
 is not checked here.
 
 Known simplifications, disclosed rather than hidden:
-- Priorities are static (by agent index, randomized once per instance) rather
-  than the dynamic "priority grows the longer an agent waits" scheme the
-  original paper uses for starvation-freedom in the lifelong setting. This
-  project's use here is one-shot MAPF (fixed start/goal, stop once reached),
-  where static priorities are a standard, defensible simplification -- but
-  starvation of a low-priority agent in a long-running lifelong deployment is
-  a known risk this implementation does not address.
 - Cycle detection during priority inheritance is a simple "is this agent
   currently being processed higher in the recursion stack" check, which
   prevents infinite recursion but is not the more refined deadlock-breaking
   the original paper's backtracking describes in detail.
+
+Priority scheme: dynamic, not static -- see `_compute_dynamic_priorities`.
+An earlier version used static priorities (fixed once per instance,
+documented at the time as a "standard, defensible simplification" for the
+one-shot setting this project uses). Comparing against a reference
+implementation (Kei18/pypibt, MIT-licensed, studied for algorithmic approach
+only -- not copied, this project's version below is independently written)
+showed the published algorithm actually uses dynamic priorities even in the
+setting closest to one-shot MAPF: an agent's priority grows by 1 every
+timestep it hasn't reached its goal, and resets to a low value once it does.
+This is the mechanism that gives PIBT its starvation-freedom guarantee, not
+an optional extra -- adopted here rather than left as a documented gap. See
+docs/pibt_dynamic_priority_results.md for the measured effect.
 """
 from __future__ import annotations
 
@@ -82,12 +88,20 @@ def solve_pibt(
     obstacles: Optional[Set[Cell]] = None,
     max_timesteps: int = 500,
     priority_seed: int = 0,
+    dynamic_priority: bool = True,
 ) -> PIBTResult:
     """Run PIBT until every agent has reached its goal or max_timesteps is
     exhausted. Returns success=False (not a raised exception) if the timestep
     budget runs out with agents still short of their goal -- a normal, expected
     outcome for a suboptimal, non-complete-in-general-graphs algorithm, not an
     implementation error.
+
+    dynamic_priority (default True): use the literature's starvation-free
+    scheme (priority grows the longer an agent waits, resets on arrival)
+    rather than a fixed priority order. Kept togglable, not because static
+    priority is recommended, but so docs/pibt_dynamic_priority_results.md's
+    before/after comparison can be reproduced directly by flipping one flag
+    on otherwise identical code.
     """
     import random
 
@@ -102,10 +116,13 @@ def solve_pibt(
     rng = random.Random(priority_seed)
     priority_order = ids[:]
     rng.shuffle(priority_order)
-    # Static priority *value* per agent (higher = goes first); index into the
-    # shuffled order gives a fixed total order, matching the "static priority"
-    # simplification documented in the module docstring.
-    priority_value = {aid: (n - i) for i, aid in enumerate(priority_order)}
+    # Initial priority value (higher = goes first). With dynamic_priority=True
+    # this is only the starting point -- see the update rule at the bottom of
+    # the main loop below, which is what actually gives PIBT its
+    # starvation-freedom guarantee (an agent that keeps losing contested
+    # cells has its priority grow every timestep until it eventually outranks
+    # whatever was blocking it).
+    priority_value = {aid: float(n - i) for i, aid in enumerate(priority_order)}
 
     # One-shot MAPF convention: once an agent reaches its goal it stays there
     # permanently for the rest of the run, rather than remaining eligible to be
@@ -209,6 +226,23 @@ def solve_pibt(
         for agent_id in ids:
             pos[agent_id] = decided[agent_id]
             paths[agent_id].append(decided[agent_id])
+
+        if dynamic_priority:
+            # The mechanism that actually gives PIBT its starvation-freedom
+            # guarantee: an agent that hasn't reached its goal has its
+            # priority grow by 1 every timestep, so an agent repeatedly
+            # losing contested cells eventually outranks whatever keeps
+            # blocking it. An agent that HAS reached its goal has its
+            # priority reset to a low value (here: 0, since this project's
+            # one-shot agents freeze at goal and never move again, unlike
+            # the lifelong setting the reference scheme was designed for,
+            # where a reset-not-frozen agent might be given a new goal
+            # later and needs a fair, low starting priority again).
+            for aid in ids:
+                if pos[aid] == goal[aid]:
+                    priority_value[aid] = 0.0
+                else:
+                    priority_value[aid] += 1.0
 
     return PIBTResult(
         success=False, paths=paths, runtime_s=time.perf_counter() - t0, timesteps_used=max_timesteps,

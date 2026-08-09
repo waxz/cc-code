@@ -128,6 +128,18 @@ not rounded up — with a concrete, evidence-backed revised recommendation
 (PIBT-style search for the lane-graph, not further CBS patching) rather than
 left as an open question.
 
+See [`docs/pibt_dynamic_priority_results.md`](docs/pibt_dynamic_priority_results.md)
+for what happened incorporating a real SOTA improvement: `Kei18/pypibt` (the
+algorithm's own author's reference implementation) was cloned and studied,
+revealing this project's PIBT used a static-priority simplification the
+published algorithm doesn't — adopted the literature's dynamic,
+starvation-free priority scheme instead. Honestly measured: **exactly
+identical** success/failure to static priority across 900+ trials on this
+project's tested instance distribution, with the root cause verified (not
+assumed) — starvation needs sustained contention over many timesteps these
+short, one-shot instances don't generate. Kept as the new default anyway
+(literature-correct, never measured worse) and locked in as a regression test.
+
 ## Quick start
 
 ```bash
