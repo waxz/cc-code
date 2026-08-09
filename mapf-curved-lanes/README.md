@@ -103,6 +103,16 @@ time, to the multi-agent solver's own soundness claims (1000 trials, 0
 failures — reported precisely as a soundness result, distinct from the
 already-known completeness gap it does not address).
 
+See [`docs/algorithm_comparison_report.md`](docs/algorithm_comparison_report.md)
+for a real performance-metric comparison against PIBT (Priority Inheritance with
+Backtracking) — reproduced in `src/baselines/pibt.py`, not just cited. Measured,
+headline result: PIBT ran ~687x faster than this project's grid-CBS baseline on
+average, with a competitive-or-better success rate (43.75% vs. 40.62% on one
+sweep; tied at 22.22% on a harder, higher-agent-count sweep) — the core
+literature claim, reproduced and measured, not assumed to transfer. Two real
+bugs were found and fixed while implementing PIBT (a candidate-ordering deadlock
+and a goal-oscillation bug), both documented and locked in as regression tests.
+
 ## Quick start
 
 ```bash

@@ -96,6 +96,9 @@ paper PDFs — clone/read them from these links directly.
   deadlocks. Directly addresses this project's documented wait-only-incompleteness
   limitation (see docs/benchmark_plan.md) by rerouting every timestep instead of
   fixing a route once. Reported capable of hundreds of agents in under 200ms.
+  **Reproduced** in `src/baselines/pibt.py` and benchmarked against this
+  project's other solvers -- see `docs/algorithm_comparison_report.md` for
+  measured results (not just the cited claims).
 
 - **Jiang, Wang, Veerapaneni, Duhan, Sartoretti, Li. "Deploying Ten Thousand
   Robots: Scalable Imitation Learning for Lifelong Multi-Agent Path Finding."**

@@ -221,28 +221,35 @@ concrete to actually compare against, not just gesture at:**
 
 **What "compare with the best SOTA algorithm" concretely means here, in order:**
 
-1. **Reproduce PIBT itself** (not just cite it) as an additional mode in
-   `src/solver.py`, on the same MovingAI-derived instances used for the
-   single-agent benchmark (`data/movingai/`) first — MAPF scenario files exist in
-   the same MovingAI benchmark family this project already uses, so this reuses
-   existing data rather than requiring a new download.
-2. **Benchmark it against this project's own CBS/PBS**, and separately against the
-   grid-CBS baseline already implemented (`src/baselines/grid_cbs.py`), on
-   identical instances, using identical metrics (success rate, sum-of-costs,
-   runtime, and the throughput/cycle-time metrics from section 3) — not
-   PIBT-paper-reported numbers on PIBT-paper hardware, which aren't a fair
-   same-machine comparison.
-3. **Only then** attempt the harder, more honest comparison: translate this
-   project's actual curved-lane, heterogeneous, load-dependent instances into
-   whatever grid/graph representation a reproduced PIBT can consume (the same
-   kind of translation `instance_to_grid` already does for the classical
-   baseline, with the same kind of disclosed fidelity loss), and measure whether
-   PIBT's speed advantage survives the translation, or whether this project's own
-   curvature/load-dependence work is lost in that translation the way it would be
-   lost translating into flatland-rl's grid+rail model (see section 2's known
-   translation cost) — if PIBT can't represent the load-dependent constraint at
-   all, that's the actual, honest boundary of "compare with the best," not a
-   reason to avoid measuring it.
+1. ~~Reproduce PIBT itself (not just cite it)~~ **Done** — see
+   `docs/algorithm_comparison_report.md`. Implemented in
+   `src/baselines/pibt.py` on the classical 4-connected grid (not yet as a
+   `src/solver.py` mode on the lane-graph directly — see step 3), reproduced
+   from the published algorithm description rather than the reference
+   codebase. Two real bugs were found and fixed while getting it working (a
+   candidate-ordering deadlock, and a goal-oscillation bug), both documented
+   in the module and locked in as regression tests
+   (`tests/test_pibt.py`) — the same "verify before trusting" discipline
+   applied everywhere else in this project.
+2. ~~Benchmark it against this project's own CBS/PBS and grid-CBS~~ **Done** —
+   see `docs/algorithm_comparison_report.md` for full results. Headline,
+   measured finding: PIBT ran ~687x faster than this project's grid-CBS
+   baseline on average, with a competitive-or-better success rate (43.75% vs.
+   40.62% on one sweep; tied at 22.22% on a harder, higher-agent-count sweep)
+   — the core literature claim, reproduced and measured on this project's own
+   instances rather than only cited.
+3. **Not yet done**: translate this project's actual curved-lane,
+   heterogeneous, load-dependent instances into whatever grid/graph
+   representation PIBT can consume (the same kind of translation
+   `instance_to_grid` already does for the classical baseline, with the same
+   kind of disclosed fidelity loss), and measure whether PIBT's speed
+   advantage survives the translation, or whether this project's own
+   curvature/load-dependence work is lost in that translation the way it would
+   be lost translating into flatland-rl's grid+rail model (see section 2's
+   known translation cost) — if PIBT can't represent the load-dependent
+   constraint at all, that's the actual, honest boundary of "compare with the
+   best," not a reason to avoid measuring it. This is now the concrete next
+   step, not a three-step plan with nothing done yet.
 
 This plan is intentionally sequenced so that step 1 (a real, measured PIBT
 reproduction on a standard benchmark) exists before any claim about how this

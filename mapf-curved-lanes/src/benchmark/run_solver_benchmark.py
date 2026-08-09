@@ -1,14 +1,19 @@
-"""Run the lane-graph solver (src/solver.py) and the classical grid-CBS baseline
-(src/baselines/grid_cbs.py) on the same set of generated instances and report both,
-per docs/benchmark_plan.md sections 1-3.
+"""Run the lane-graph solver (src/solver.py), the classical grid-CBS baseline
+(src/baselines/grid_cbs.py), and PIBT (src/baselines/pibt.py) on the same set of
+generated instances and report all three, per docs/benchmark_plan.md sections 1-3
+and docs/improvement_plan.md section 7's "reproduce PIBT itself, on the same
+instances, before making any comparison claim" commitment.
 
 This is the actual "does the research gap's proposed approach do anything" check:
 baseline #1 (grid_cbs) ignores curvature and load-dependence entirely; comparing it
 against ours_full on the same instances is what would show whether that matters, in
 terms of success rate, cost, and the metrics specific to this project's contribution
-(min_stability_margin). CL-CBS and HCBS (baselines #2/#3 in the benchmark plan) are
-not implemented here -- see docs/benchmark_plan.md and README.md "Status" for why
-that remains a separate, larger piece of work rather than something quietly skipped.
+(min_stability_margin). PIBT is the SOTA-scaling comparison point from
+docs/improvement_plan.md: reproduced for real (not cited), run on literally the
+same grid translation as grid_cbs so all three solvers see identical instances.
+CL-CBS and HCBS (baselines #2/#3 in the benchmark plan) are not implemented here --
+see docs/benchmark_plan.md and README.md "Status" for why that remains a separate,
+larger piece of work rather than something quietly skipped.
 
 KNOWN LIMITATION, found by actually running this (not by inspection): ours_full's
 success rate on denser instances (roughly 4+ agents on a small, sparse lane-graph)
@@ -38,13 +43,14 @@ from pathlib import Path
 from typing import List
 
 from src.baselines.grid_cbs import instance_to_grid, solve_grid_cbs
+from src.baselines.pibt import PIBTAgent, solve_pibt
 from src.benchmark.generate_instances import generate_instance
 from src.solver import solve_instance
 
 FIELDNAMES = [
     "instance_id", "map_size", "junction_density", "n_agents", "fleet_mix",
     "solver", "success", "sum_of_costs", "makespan", "runtime_s",
-    "high_level_expansions", "min_stability_margin",
+    "high_level_expansions", "min_stability_margin", "agents_per_second",
 ]
 
 
@@ -62,6 +68,7 @@ def run_one_instance(instance_id, map_size, junction_density, n_agents, fleet_mi
         "makespan": round(ours.makespan, 3), "runtime_s": round(ours.runtime_s, 4),
         "high_level_expansions": ours.high_level_expansions,
         "min_stability_margin": round(ours.min_stability_margin, 3),
+        "agents_per_second": round(n_agents / ours.runtime_s, 1) if ours.runtime_s > 0 else "",
     })
 
     grid_agents, width, height = instance_to_grid(graph, instance.agents)
@@ -73,6 +80,26 @@ def run_one_instance(instance_id, map_size, junction_density, n_agents, fleet_mi
         "makespan": grid_result.makespan, "runtime_s": round(grid_result.runtime_s, 4),
         "high_level_expansions": grid_result.high_level_expansions,
         "min_stability_margin": "",  # not a meaningful metric for the grid baseline
+        "agents_per_second": (
+            round(n_agents / grid_result.runtime_s, 1) if grid_result.runtime_s > 0 else ""
+        ),
+    })
+
+    # PIBT: reuse the exact same grid translation as grid_cbs so all three
+    # solvers are compared on literally identical instances, not just
+    # instances drawn from the same distribution.
+    pibt_agents = [PIBTAgent(a.agent_id, a.start, a.goal) for a in grid_agents]
+    pibt_result = solve_pibt(pibt_agents, width, height, max_timesteps=200, priority_seed=seed)
+    rows.append({
+        "instance_id": instance_id, "map_size": map_size, "junction_density": junction_density,
+        "n_agents": n_agents, "fleet_mix": fleet_mix, "solver": "pibt",
+        "success": pibt_result.success, "sum_of_costs": pibt_result.sum_of_costs,
+        "makespan": pibt_result.makespan, "runtime_s": round(pibt_result.runtime_s, 4),
+        "high_level_expansions": pibt_result.timesteps_used,
+        "min_stability_margin": "",
+        "agents_per_second": (
+            round(n_agents / pibt_result.runtime_s, 1) if pibt_result.runtime_s > 0 else ""
+        ),
     })
 
     return rows
@@ -134,9 +161,12 @@ def _print_summary(rows: List[dict]) -> None:
         avg_cost = (
             sum(r["sum_of_costs"] for r in successes) / len(successes) if successes else float("nan")
         )
+        aps_values = [r["agents_per_second"] for r in successes if r["agents_per_second"] != ""]
+        avg_aps = sum(aps_values) / len(aps_values) if aps_values else float("nan")
         print(
             f"{solver:10s}  n={n:4d}  success_rate={success_rate:.2%}  "
-            f"avg_runtime={avg_runtime:.4f}s  avg_cost_when_solved={avg_cost:.2f}"
+            f"avg_runtime={avg_runtime:.4f}s  avg_cost_when_solved={avg_cost:.2f}  "
+            f"avg_agents_per_second={avg_aps:.1f}"
         )
 
 
