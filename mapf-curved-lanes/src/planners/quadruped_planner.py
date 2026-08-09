@@ -20,6 +20,10 @@ peak-vs-average battery-current model from the related energy-aware locomotion w
 draw, not just time) is flagged as the natural next step rather than silently
 approximated as done.
 
+Constraint handling now uses real space-time search
+(src/lane_graph/space_time_routing.py), matching the forklift planner's upgrade --
+see that module's docstring for why the earlier wait-only scheme was replaced.
+
 If/when this project is extended toward footstep-level validation, that work should
 build on the leg-level IK formulation from the related Yin et al. (2024) extension
 referenced in docs/related_work.md rather than duplicating it here.
@@ -27,16 +31,12 @@ referenced in docs/related_work.md rather than duplicating it here.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, List, Optional
+from typing import Iterable, Optional
 
 from src.lane_graph.graph import LaneGraph
-from src.lane_graph.routing import segment_direction, shortest_path
-from src.lane_graph.trajectory import LaneLeg, NodeVisit, Trajectory
-from src.planners.forklift_planner import (
-    CONSTRAINT_CLEARANCE_BUFFER,
-    MAX_WAIT_INSERTIONS,
-    RouteConstraint,
-)
+from src.lane_graph.space_time_routing import space_time_search
+from src.lane_graph.trajectory import Trajectory
+from src.planners.forklift_planner import CONSTRAINT_CLEARANCE_BUFFER, RouteConstraint
 
 
 @dataclass
@@ -72,8 +72,8 @@ class QuadrupedPlanner:
         def feasible(seg_id: str) -> bool:
             return True  # no curvature constraint for a holonomic legged agent
 
-        def cost(seg_id: str) -> float:
-            return self.graph.segments[seg_id].length / speed
+        def speed_fn(seg_id: str) -> float:
+            return speed
 
         goal_pos = self.graph.nodes[goal_node].position
 
@@ -86,64 +86,18 @@ class QuadrupedPlanner:
             dist = ((node_pos[0] - goal_pos[0]) ** 2 + (node_pos[1] - goal_pos[1]) ** 2) ** 0.5
             return dist / speed
 
-        path = shortest_path(self.graph, start_node, goal_node, cost, feasible, heuristic_fn=heuristic)
-        if path is None:
-            return None
-
-        return self._simulate_timing(agent_id, start_node, path, speed, constraints, start_time)
-
-    def _simulate_timing(
-        self,
-        agent_id: str,
-        start_node: str,
-        path: List[str],
-        speed: float,
-        constraints: List[RouteConstraint],
-        start_time: float,
-    ) -> Optional[Trajectory]:
-        traj = Trajectory(
-            agent_id=agent_id, agent_class="quadruped",
-            half_length=self.profile.footprint_half_length,
-        )
-        t = start_time
-        node = start_node
-
-        def blocked_until(location: str, t_start: float, t_end: float) -> Optional[float]:
-            latest_release = None
+        def blocked(location: str, t_start: float, t_end: float) -> bool:
+            # Same CONSTRAINT_CLEARANCE_BUFFER padding as ForkliftPlanner's
+            # blocked() -- see that function's comment for why the raw
+            # constraint window alone isn't enough to avoid a recurring
+            # boundary-touch false-conflict.
             for c in constraints:
-                if c.location != location:
-                    continue
-                if t_start < c.t_end and c.t_start < t_end:
-                    if latest_release is None or c.t_end > latest_release:
-                        latest_release = c.t_end
-            return latest_release
+                if c.location == location and t_start < c.t_end + CONSTRAINT_CLEARANCE_BUFFER and c.t_start < t_end:
+                    return True
+            return False
 
-        for seg_id in path:
-            seg = self.graph.segments[seg_id]
-            forward = segment_direction(self.graph, seg_id, node)
-            travel_time = seg.length / speed
-
-            for _ in range(MAX_WAIT_INSERTIONS):
-                release = blocked_until(node, t, t + 1e-6) or blocked_until(
-                    seg_id, t, t + travel_time
-                )
-                if release is None:
-                    break
-                t = release + CONSTRAINT_CLEARANCE_BUFFER
-            else:
-                return None
-
-            enter_t = t
-            exit_t = t + travel_time
-            traj.node_visits.append(NodeVisit(node_id=node, t_enter=enter_t, t_exit=exit_t))
-
-            s_start, s_end = (0.0, seg.length) if forward else (seg.length, 0.0)
-            traj.legs.append(
-                LaneLeg(segment_id=seg_id, s_start=s_start, s_end=s_end, t_start=t, t_end=exit_t)
-            )
-
-            t = exit_t
-            node = seg.end_node if forward else seg.start_node
-
-        traj.node_visits.append(NodeVisit(node_id=node, t_enter=t, t_exit=t))
-        return traj
+        return space_time_search(
+            self.graph, agent_id, "quadruped", self.profile.footprint_half_length,
+            start_node, goal_node, feasible, speed_fn, blocked,
+            heuristic_fn=heuristic, start_time=start_time,
+        )

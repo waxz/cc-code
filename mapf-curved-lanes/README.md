@@ -113,6 +113,21 @@ literature claim, reproduced and measured, not assumed to transfer. Two real
 bugs were found and fixed while implementing PIBT (a candidate-ordering deadlock
 and a goal-oscillation bug), both documented and locked in as regression tests.
 
+See [`docs/weaknesses_analysis.md`](docs/weaknesses_analysis.md) for a
+consolidated, impact-ranked analysis of every algorithm's weaknesses
+(`ours_full`, `grid_cbs`, `pibt`, `jps`, `dijkstra`/`astar`), and
+[`docs/space_time_routing_results.md`](docs/space_time_routing_results.md) for
+what happened when the highest-ranked weakness (the low-level planner's
+wait-only constraint handling) was actually fixed: real space-time search was
+implemented and verified correct — rerouting genuinely works — but measured
+**not** to improve aggregate benchmark success rate (unchanged, 25.00%) and
+made runtime 7.4x worse, because it exposes a well-documented CBS limitation
+(slow convergence on single-corridor cases) more severely than the old,
+more restricted scheme happened to avoid. Reported as a real negative result,
+not rounded up — with a concrete, evidence-backed revised recommendation
+(PIBT-style search for the lane-graph, not further CBS patching) rather than
+left as an open question.
+
 ## Quick start
 
 ```bash

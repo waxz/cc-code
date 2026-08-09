@@ -110,19 +110,34 @@ benchmark can't:
 `docs/benchmark_plan.md`) can't reroute around a contested segment, only wait for
 it, which is provably incomplete on sparse graphs.
 
+**Update: the low-level fix was attempted and measured not to work.** Real
+space-time search was implemented (`src/lane_graph/space_time_routing.py`),
+verified correct (rerouting genuinely works), and integrated — but it did not
+improve aggregate success rate and made runtime 7.4x worse, because it exposes
+CBS's own well-documented slow convergence on single-corridor cases more
+severely than the old scheme happened to avoid. Full result:
+`docs/space_time_routing_results.md`. This strengthens, not weakens, the
+recommendation below: the fix needed is a different high-level algorithm, not
+further low-level patching of CBS.
+
 **Recommendation: adopt PIBT (Priority Inheritance with Backtracking)** as an
 additional, faster solver mode, not a replacement for CBS/PBS. PIBT (Okumura et
 al., 2022) does one-timestep, priority-based replanning with backtracking to break
 deadlocks — every agent reconsiders its next step every timestep, which is exactly
-the "reroute, don't just wait" capability the current planner lacks. It's the
-component underlying WPPL, winner of the 2023 Amazon-sponsored League of Robot
-Runners competition, and is reported capable of collision-free solutions for
-hundreds of agents in under 200ms, with the competition's target being 10,000
-agents planned in one second. Practical migration path: keep CBS/PBS as the
-"optimal reference" mode for small instances and correctness validation (it's
-already tested and understood), and add PIBT as the "fast/scalable" mode for the
-lifelong, larger-fleet Gazebo benchmarks — this mirrors how the MAPF field itself
-is structured (CBS-family for provable optimality, PIBT/LaCAM-family for scale).
+the "reroute, don't just wait" capability the current planner lacks, and — measured
+in `docs/algorithm_comparison_report.md` — does not share CBS's slow-convergence
+failure mode on the instances tested. It's the component underlying WPPL, winner
+of the 2023 Amazon-sponsored League of Robot Runners competition, and is reported
+capable of collision-free solutions for hundreds of agents in under 200ms, with
+the competition's target being 10,000 agents planned in one second. Practical
+migration path: keep CBS/PBS as the "optimal reference" mode for small instances
+and correctness validation (it's already tested and understood), and add PIBT —
+adapted to the lane-graph directly, reusing `space_time_search`'s `(node,
+timestep)` state representation as the substrate but replacing CBS's
+conflict-tree branching with PIBT's priority inheritance — as the "fast/scalable"
+mode. This mirrors how the MAPF field itself is structured (CBS-family for
+provable optimality, PIBT/LaCAM-family for scale), and is now the concrete,
+evidence-backed next step rather than one of several options.
 
 **For the kinodynamic/curved-lane case specifically** — this project's actual
 research niche — the most directly relevant recent paper is **db-LaCAM**

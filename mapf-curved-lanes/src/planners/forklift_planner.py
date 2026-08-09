@@ -20,12 +20,16 @@ than only choosing which segments to use, is the natural next step and would let
 this module also plan feasible maneuvers *within* a segment or at junctions rather
 than only between them.
 
-Constraint handling is similarly simplified: given a high-level constraint forbidding
-this agent from a (location, time-window), the planner keeps its Dijkstra-computed
-route fixed and inserts a wait before the constrained location until the window has
-passed, rather than replanning the route itself. This mirrors bounded local waiting
-rather than a full space-time search (e.g. SIPP) -- documented here rather than
-silently passed off as one.
+Constraint handling: given a high-level constraint forbidding this agent from a
+(location, time-window), the planner used to keep its A*-computed route fixed
+and insert a wait before the constrained location -- documented at the time as
+"mirrors bounded local waiting rather than a full space-time search", and later
+measured to cost real solved instances (0% success on the hardest tested sweep,
+see docs/weaknesses_analysis.md section 1.1). This has been replaced with a real
+space-time search (src/lane_graph/space_time_routing.py): the low-level planner
+now searches (node, discretized-timestep) states directly, so a constraint can
+be resolved by rerouting through a different node, not only by waiting where it
+is. See docs/space_time_routing_results.md for the measured before/after.
 """
 from __future__ import annotations
 
@@ -34,8 +38,8 @@ from enum import Enum
 from typing import Iterable, List, Optional, Tuple
 
 from src.lane_graph.graph import LaneGraph
-from src.lane_graph.routing import segment_direction, shortest_path
-from src.lane_graph.trajectory import LaneLeg, NodeVisit, Trajectory
+from src.lane_graph.space_time_routing import space_time_search
+from src.lane_graph.trajectory import Trajectory
 
 MAX_WAIT_INSERTIONS = 50
 
@@ -144,9 +148,8 @@ class ForkliftPlanner:
         start_time: float = 0.0,
     ) -> Optional[Trajectory]:
         """Route agent_id from start_node to goal_node, respecting the load-dependent
-        curvature bound and any RouteConstraints, or return None if infeasible (no
-        curvature-feasible route exists, or every route remains blocked after
-        MAX_WAIT_INSERTIONS wait insertions).
+        curvature bound and any RouteConstraints, via space-time search (rerouting
+        is available, not only waiting) -- see module docstring.
         """
         constraints = list(constraints or [])
         curvature_bound = self.profile.curvature_bound(load_state)
@@ -155,18 +158,54 @@ class ForkliftPlanner:
             seg = self.graph.segments[seg_id]
             return abs(seg.curvature) <= curvature_bound + self.CURVATURE_EPS
 
-        def cost(seg_id: str) -> float:
-            seg = self.graph.segments[seg_id]
-            return seg.length / self._segment_speed(seg, load_state)
+        def speed(seg_id: str) -> float:
+            return self._segment_speed(self.graph.segments[seg_id], load_state)
 
-        path = shortest_path(
-            self.graph, start_node, goal_node, cost, feasible,
-            heuristic_fn=self._heuristic(goal_node, load_state),
+        def blocked(location: str, t_start: float, t_end: float) -> bool:
+            for c in constraints:
+                # Padded by CONSTRAINT_CLEARANCE_BUFFER beyond the constraint's
+                # raw end, not just c.t_end: the constraint window already
+                # comes from the high-level conflict detector's own
+                # time_margin-padded overlap (src/lane_graph/conflicts.py), so
+                # a state that clears the raw window by less than
+                # 2*time_margin can still register as newly conflicting once
+                # the detector re-pads both agents' occupancies on the next
+                # high-level check -- the same Zeno's-paradox-style boundary
+                # case CONSTRAINT_CLEARANCE_BUFFER was originally derived to
+                # fix for the old wait-only scheme (see that constant's own
+                # docstring). Found again here, in the new space-time search,
+                # by watching the exact same conflict window recur forever
+                # with a growing constraint count that had no effect -- not
+                # assumed to still apply, checked.
+                if c.location == location and t_start < c.t_end + CONSTRAINT_CLEARANCE_BUFFER and c.t_start < t_end:
+                    return True
+            return False
+
+        traj = space_time_search(
+            self.graph, agent_id, "forklift", self.profile.footprint_half_length,
+            start_node, goal_node, feasible, speed, blocked,
+            heuristic_fn=self._heuristic(goal_node, load_state), start_time=start_time,
         )
-        if path is None:
-            return None  # no curvature-feasible route exists for this load state
+        if traj is None:
+            return None
+        self._annotate_stability_margin(traj, load_state, speed)
+        return traj
 
-        return self._simulate_timing(agent_id, start_node, path, load_state, constraints, start_time)
+    def _annotate_stability_margin(self, traj: Trajectory, load_state: LoadState, speed_fn) -> None:
+        """Post-process the returned trajectory's legs to compute
+        min_stability_margin -- a forklift-specific metric space_time_search
+        itself doesn't know about (it's generic over agent classes, see
+        src/planners/quadruped_planner.py for the other caller).
+        """
+        min_margin = 1.0
+        for leg in traj.legs:
+            seg = self.graph.segments[leg.segment_id]
+            if abs(seg.curvature) > self.CURVATURE_EPS:
+                seg_speed = speed_fn(leg.segment_id)
+                lateral_accel = (seg_speed ** 2) * abs(seg.curvature)
+                margin = self.profile.stability_margin(load_state, lateral_accel)
+                min_margin = min(min_margin, margin)
+        traj.min_stability_margin = min_margin
 
     def _heuristic(self, goal_node: str, load_state: LoadState):
         """Straight-line-distance-over-max-speed heuristic for A* (see
@@ -211,73 +250,3 @@ class ForkliftPlanner:
         accel_budget = self.profile.max_lateral_accel(load_state)
         curve_speed_limit = (accel_budget / abs(seg.curvature)) ** 0.5
         return min(base_speed, curve_speed_limit)
-
-    def _simulate_timing(
-        self,
-        agent_id: str,
-        start_node: str,
-        path: List[str],
-        load_state: LoadState,
-        constraints: List[RouteConstraint],
-        start_time: float,
-    ) -> Optional[Trajectory]:
-        traj = Trajectory(
-            agent_id=agent_id, agent_class="forklift",
-            half_length=self.profile.footprint_half_length,
-        )
-        t = start_time
-        node = start_node
-        min_margin = 1.0
-
-        def blocked_until(location: str, t_start: float, t_end: float) -> Optional[float]:
-            """If any constraint forbids `location` during [t_start, t_end), return
-            the latest such constraint's end time (when we could safely proceed);
-            else None.
-            """
-            latest_release = None
-            for c in constraints:
-                if c.location != location:
-                    continue
-                if t_start < c.t_end and c.t_start < t_end:
-                    if latest_release is None or c.t_end > latest_release:
-                        latest_release = c.t_end
-            return latest_release
-
-        for seg_id in path:
-            seg = self.graph.segments[seg_id]
-            forward = segment_direction(self.graph, seg_id, node)
-            seg_speed = self._segment_speed(seg, load_state)
-            travel_time = seg.length / seg_speed
-
-            # Node dwell before entering the segment: check node + segment
-            # constraints, inserting waits (bounded) until clear.
-            for _ in range(MAX_WAIT_INSERTIONS):
-                release = blocked_until(node, t, t + 1e-6) or blocked_until(
-                    seg_id, t, t + travel_time
-                )
-                if release is None:
-                    break
-                t = release + CONSTRAINT_CLEARANCE_BUFFER
-            else:
-                return None  # gave up waiting out a persistent constraint
-
-            enter_t = t
-            exit_t = t + travel_time
-            traj.node_visits.append(NodeVisit(node_id=node, t_enter=enter_t, t_exit=exit_t))
-
-            s_start, s_end = (0.0, seg.length) if forward else (seg.length, 0.0)
-            traj.legs.append(
-                LaneLeg(segment_id=seg_id, s_start=s_start, s_end=s_end, t_start=t, t_end=exit_t)
-            )
-
-            if abs(seg.curvature) > self.CURVATURE_EPS:
-                lateral_accel = (seg_speed ** 2) * abs(seg.curvature)
-                margin = self.profile.stability_margin(load_state, lateral_accel)
-                min_margin = min(min_margin, margin)
-
-            t = exit_t
-            node = seg.end_node if forward else seg.start_node
-
-        traj.node_visits.append(NodeVisit(node_id=node, t_enter=t, t_exit=t))
-        traj.min_stability_margin = min_margin
-        return traj

@@ -75,7 +75,16 @@ def check_lane_conflicts(
 
     t_overlap_start = max(occ_a.t_start - time_margin, occ_b.t_start - time_margin)
     t_overlap_end = min(occ_a.t_end + time_margin, occ_b.t_end + time_margin)
-    if t_overlap_start > t_overlap_end:
+    if t_overlap_start >= t_overlap_end:
+        # >= not >: an exact-zero-width touch means the two padded occupancies
+        # meet at precisely one instant with no actual overlap duration -- the
+        # boundary of the safety margin being exactly satisfied, not violated.
+        # Treating an exact touch as "still a conflict" (the old `>` here)
+        # forced the high-level search to keep branching on it forever once
+        # space-time search (src/lane_graph/space_time_routing.py) started
+        # finding minimal-cost solutions that land exactly on that boundary --
+        # found by tracing an actual non-converging run and watching the same
+        # zero-width window (t_start == t_end) recur, not assumed from theory.
         return None
 
     pad = occ_a.half_length + occ_b.half_length + safety_margin
@@ -137,7 +146,10 @@ def check_node_conflict(
         return None
     lo = max(visit_a.t_enter - time_margin, visit_b.t_enter - time_margin)
     hi = min(visit_a.t_exit + time_margin, visit_b.t_exit + time_margin)
-    if lo > hi:
+    if lo >= hi:
+        # >= not >: see check_lane_conflicts' comment on the same boundary --
+        # an exact touch is the safety margin being exactly satisfied, not
+        # violated.
         return None
     return Conflict(
         agent_a="", agent_b="", location=visit_a.node_id, t=lo, t_end=hi, kind="junction"
