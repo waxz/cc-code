@@ -1,6 +1,6 @@
 # commsys Nim benchmark report
 
-Generated: 2026-08-09 08:22:06 UTC
+Generated: 2026-08-09 09:37:38 UTC
 
 ## Hardware
 ```
@@ -25,14 +25,14 @@ Nim Compiler Version 1.6.14 [Linux: amd64]
 ## bench_ringbuffer.nim (cross-process shared memory)
 ```
 === Nim SPSC ring buffer, cross-process (fork), N=500000 ===
-  received 500000 messages in 0.0095s  (52763671. msg/s)
+  received 500000 messages in 0.0101s  (49671201. msg/s)
 ```
 
 ## bench_flatbuffers.nim (Nim calling the C++ FlatBuffers library)
 ```
 
 === Nim -> C++ FlatBuffers IMU batch (n=20 samples/msg) ===
-  build (Nim -> C++ FlatBufferBuilder) mean=    0.16us  p50=    0.16us  p99=    0.19us  size=    664B
+  build (Nim -> C++ FlatBufferBuilder) mean=    0.16us  p50=    0.16us  p99=    0.18us  size=    664B
   read+sum (zero-copy, C++ accessors) mean=    0.05us  p50=    0.04us  p99=    0.05us  size=    664B
 
 === Nim -> C++ FlatBuffers IMU batch (n=1 samples/msg) ===
@@ -40,10 +40,10 @@ Nim Compiler Version 1.6.14 [Linux: amd64]
   read+sum (zero-copy, C++ accessors) mean=    0.03us  p50=    0.03us  p99=    0.03us  size=     56B
 
 === Nim -> C++ FlatBuffers LaserScan (n=1080 points) ===
-  build (from seq[float32])        mean=    0.26us  p50=    0.26us  p99=    0.28us  size=   4392B
+  build (from seq[float32])        mean=    0.32us  p50=    0.31us  p99=    0.41us  size=   4392B
   read+sum (all elements)          mean=    1.04us  p50=    1.02us  p99=    1.05us  size=   4392B
 
 === Nim -> C++ FlatBuffers LaserScan (n=2000 points) ===
-  build (from seq[float32])        mean=    0.33us  p50=    0.33us  p99=    0.35us  size=   8072B
+  build (from seq[float32])        mean=    0.34us  p50=    0.33us  p99=    0.35us  size=   8072B
   read+sum (all elements)          mean=    1.90us  p50=    1.87us  p99=    1.90us  size=   8072B
 ```
