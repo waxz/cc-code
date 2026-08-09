@@ -1,12 +1,12 @@
 # mapf-curved-lanes benchmark report
 
-Generated: 2026-08-09 07:02:38 UTC
+Generated: 2026-08-09 07:27:11 UTC
 
 ## Hardware
 ```
 vCPUs: 4
                total        used        free      shared  buff/cache   available
-Mem:            15Gi       1.1Gi        10Gi        49Mi       4.8Gi        14Gi
+Mem:            15Gi       1.0Gi       9.6Gi        49Mi       5.4Gi        14Gi
 Swap:          3.0Gi          0B       3.0Gi
 Python 3.12.13
 ```
@@ -20,27 +20,28 @@ benchmark: 5.2.3 (defaults: timer=time.perf_counter disable_gc=False min_rounds=
 rootdir: /home/runner/work/cc-code/cc-code/mapf-curved-lanes
 plugins: cov-7.1.0, benchmark-5.2.3, asyncio-1.4.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collecting ... collected 17 items
+collecting ... collected 18 items
 
 tests/test_conflict_tree.py::test_cbs_resolves_head_on_conflict PASSED   [  5%]
 tests/test_conflict_tree.py::test_pbs_resolves_head_on_conflict PASSED   [ 11%]
-tests/test_conflict_tree.py::test_invalid_mode_raises PASSED             [ 17%]
-tests/test_grid_cbs.py::test_grid_cbs_resolves_swap_with_room_to_pass PASSED [ 23%]
-tests/test_grid_cbs.py::test_grid_cbs_infeasible_swap_in_single_width_corridor PASSED [ 29%]
-tests/test_grid_cbs.py::test_instance_to_grid_snaps_nodes_to_cells PASSED [ 35%]
-tests/test_lane_graph.py::test_straight_segment_pose_at PASSED           [ 41%]
-tests/test_lane_graph.py::test_curved_segment_quarter_circle PASSED      [ 47%]
-tests/test_lane_graph.py::test_pose_at_out_of_range_raises PASSED        [ 52%]
-tests/test_lane_graph.py::test_graph_add_and_neighbors PASSED            [ 58%]
-tests/test_lane_graph.py::test_graph_validate_catches_missing_node PASSED [ 64%]
-tests/test_solver.py::test_load_dependent_curvature_changes_route PASSED [ 70%]
-tests/test_solver.py::test_curved_segment_speed_is_capped_so_margin_never_negative PASSED [ 76%]
-tests/test_solver.py::test_infeasible_when_only_route_exceeds_curvature_bound_for_both_states PASSED [ 82%]
+tests/test_conflict_tree.py::test_invalid_mode_raises PASSED             [ 16%]
+tests/test_flatland_smoke.py::test_flatland_installs_and_runs_headless PASSED [ 22%]
+tests/test_grid_cbs.py::test_grid_cbs_resolves_swap_with_room_to_pass PASSED [ 27%]
+tests/test_grid_cbs.py::test_grid_cbs_infeasible_swap_in_single_width_corridor PASSED [ 33%]
+tests/test_grid_cbs.py::test_instance_to_grid_snaps_nodes_to_cells PASSED [ 38%]
+tests/test_lane_graph.py::test_straight_segment_pose_at PASSED           [ 44%]
+tests/test_lane_graph.py::test_curved_segment_quarter_circle PASSED      [ 50%]
+tests/test_lane_graph.py::test_pose_at_out_of_range_raises PASSED        [ 55%]
+tests/test_lane_graph.py::test_graph_add_and_neighbors PASSED            [ 61%]
+tests/test_lane_graph.py::test_graph_validate_catches_missing_node PASSED [ 66%]
+tests/test_solver.py::test_load_dependent_curvature_changes_route PASSED [ 72%]
+tests/test_solver.py::test_curved_segment_speed_is_capped_so_margin_never_negative PASSED [ 77%]
+tests/test_solver.py::test_infeasible_when_only_route_exceeds_curvature_bound_for_both_states PASSED [ 83%]
 tests/test_solver.py::test_solver_resolves_head_on_conflict_cbs PASSED   [ 88%]
 tests/test_solver.py::test_solver_resolves_head_on_conflict_pbs PASSED   [ 94%]
 tests/test_solver.py::test_solver_heterogeneous_fleet_no_conflict_when_independent PASSED [100%]
 
-============================== 17 passed in 0.10s ==============================
+============================== 18 passed in 1.88s ==============================
 ```
 
 ## Instance generation timing
@@ -49,27 +50,27 @@ tests/test_solver.py::test_solver_heterogeneous_fleet_no_conflict_when_independe
 wrote small_medium_a10_m50-50_000
 wrote small_medium_a10_m50-50_001
 wrote small_medium_a10_m50-50_002
-  (small map, 10 agents, 3 instances: 0.081s)
+  (small map, 10 agents, 3 instances: 0.118s)
 wrote small_medium_a25_m50-50_000
 wrote small_medium_a25_m50-50_001
 wrote small_medium_a25_m50-50_002
-  (small map, 25 agents, 3 instances: 0.079s)
+  (small map, 25 agents, 3 instances: 0.117s)
 wrote medium_medium_a10_m50-50_000
 wrote medium_medium_a10_m50-50_001
 wrote medium_medium_a10_m50-50_002
-  (medium map, 10 agents, 3 instances: 0.082s)
+  (medium map, 10 agents, 3 instances: 0.124s)
 wrote medium_medium_a25_m50-50_000
 wrote medium_medium_a25_m50-50_001
 wrote medium_medium_a25_m50-50_002
-  (medium map, 25 agents, 3 instances: 0.081s)
+  (medium map, 25 agents, 3 instances: 0.125s)
 wrote large_medium_a10_m50-50_000
 wrote large_medium_a10_m50-50_001
 wrote large_medium_a10_m50-50_002
-  (large map, 10 agents, 3 instances: 0.124s)
+  (large map, 10 agents, 3 instances: 0.176s)
 wrote large_medium_a25_m50-50_000
 wrote large_medium_a25_m50-50_001
 wrote large_medium_a25_m50-50_002
-  (large map, 25 agents, 3 instances: 0.124s)
+  (large map, 25 agents, 3 instances: 0.175s)
 ```
 
 ## Solver comparison: ours_full vs. classical grid-CBS baseline
@@ -81,27 +82,27 @@ more compute than a CI job budget allows.
 
 ```
   small_medium_a2_000                 ours_full  success=True  cost=  26.587 runtime=0.0001s
-  small_medium_a2_000                 grid_cbs   success=False cost=       0 runtime=1.4494s
+  small_medium_a2_000                 grid_cbs   success=False cost=       0 runtime=1.8078s
   small_medium_a2_001                 ours_full  success=True  cost=    35.0 runtime=0.0001s
   small_medium_a2_001                 grid_cbs   success=True  cost=      12 runtime=0.0001s
-  small_medium_a2_002                 ours_full  success=True  cost=  45.833 runtime=0.0s
+  small_medium_a2_002                 ours_full  success=True  cost=  45.833 runtime=0.0001s
   small_medium_a2_002                 grid_cbs   success=True  cost=      12 runtime=0.0001s
-  small_medium_a3_000                 ours_full  success=False cost=     0.0 runtime=0.0451s
-  small_medium_a3_000                 grid_cbs   success=False cost=       0 runtime=1.5613s
-  small_medium_a3_001                 ours_full  success=False cost=     0.0 runtime=0.049s
-  small_medium_a3_001                 grid_cbs   success=False cost=       0 runtime=1.612s
+  small_medium_a3_000                 ours_full  success=False cost=     0.0 runtime=0.0595s
+  small_medium_a3_000                 grid_cbs   success=False cost=       0 runtime=1.9584s
+  small_medium_a3_001                 ours_full  success=False cost=     0.0 runtime=0.0606s
+  small_medium_a3_001                 grid_cbs   success=False cost=       0 runtime=1.9964s
   small_medium_a3_002                 ours_full  success=True  cost=    39.0 runtime=0.0002s
-  small_medium_a3_002                 grid_cbs   success=False cost=       0 runtime=0.0294s
-  small_medium_a4_000                 ours_full  success=False cost=     0.0 runtime=0.1034s
-  small_medium_a4_000                 grid_cbs   success=False cost=       0 runtime=0.1803s
-  small_medium_a4_001                 ours_full  success=True  cost=    62.5 runtime=0.0001s
-  small_medium_a4_001                 grid_cbs   success=False cost=       0 runtime=0.8888s
-  small_medium_a4_002                 ours_full  success=False cost=     0.0 runtime=0.0405s
-  small_medium_a4_002                 grid_cbs   success=False cost=       0 runtime=0.1226s
+  small_medium_a3_002                 grid_cbs   success=False cost=       0 runtime=0.0397s
+  small_medium_a4_000                 ours_full  success=False cost=     0.0 runtime=0.1654s
+  small_medium_a4_000                 grid_cbs   success=False cost=       0 runtime=0.2406s
+  small_medium_a4_001                 ours_full  success=True  cost=    62.5 runtime=0.0002s
+  small_medium_a4_001                 grid_cbs   success=False cost=       0 runtime=1.1152s
+  small_medium_a4_002                 ours_full  success=False cost=     0.0 runtime=0.051s
+  small_medium_a4_002                 grid_cbs   success=False cost=       0 runtime=0.1331s
 
 === Summary ===
-grid_cbs    n=   9  success_rate=22.22%  avg_runtime=0.6493s  avg_cost_when_solved=12.00
-ours_full   n=   9  success_rate=55.56%  avg_runtime=0.0265s  avg_cost_when_solved=41.78
+grid_cbs    n=   9  success_rate=22.22%  avg_runtime=0.8102s  avg_cost_when_solved=12.00
+ours_full   n=   9  success_rate=55.56%  avg_runtime=0.0375s  avg_cost_when_solved=41.78
 
 wrote /home/runner/work/cc-code/cc-code/mapf-curved-lanes/results/solver_benchmark.csv
 ```
