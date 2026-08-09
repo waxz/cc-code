@@ -78,6 +78,55 @@ paper PDFs — clone/read them from these links directly.
   multi-robot benchmarking. Used in `docs/benchmark_plan.md` as the recommended tool for
   physical-plausibility validation rather than building a simulator from scratch.
 
+## Industrial-scale global planning algorithms (see docs/improvement_plan.md)
+
+- **Okumura, Machida, Défago, Tamura. "Priority Inheritance with Backtracking for
+  Iterative Multi-Agent Path Finding."** Artificial Intelligence, 2022 (IJCAI 2019
+  original). https://www.ijcai.org/proceedings/2019/0076.pdf
+  PIBT: one-timestep, priority-based replanning with backtracking to break
+  deadlocks. Directly addresses this project's documented wait-only-incompleteness
+  limitation (see docs/benchmark_plan.md) by rerouting every timestep instead of
+  fixing a route once. Reported capable of hundreds of agents in under 200ms.
+
+- **Jiang, Wang, Veerapaneni, Duhan, Sartoretti, Li. "Deploying Ten Thousand
+  Robots: Scalable Imitation Learning for Lifelong Multi-Agent Path Finding."**
+  ICRA 2025. https://arxiv.org/abs/2410.21415
+  Context on WPPL (PIBT + windowed MAPF-LNS), winner of the 2023 Amazon-sponsored
+  League of Robot Runners competition; validated on 10 real + 100 virtual robots.
+
+- **Okumura. "db-LaCAM: Fast and Scalable Multi-Robot Kinodynamic Motion Planning
+  with Discontinuity-Bounded Search and Lightweight MAPF."**
+  https://arxiv.org/abs/2512.06796
+  Combines lightweight MAPF with discontinuity-bounded search for real vehicle
+  kinematics rather than point-mass agents on a graph -- sits close to this
+  project's own heterogeneous/kinodynamic/non-grid niche; flagged in
+  docs/improvement_plan.md as worth reading closely before choosing how to replace
+  the current Dijkstra-based low-level planner.
+
+- **Li, Tinka, Kiesel, Durham, Kumar, Koenig. "Lifelong Multi-Agent Path Finding in
+  Large-Scale Warehouses."** AAAI 2021 (AAMAS 2020 original).
+  The Amazon Robotics collaboration paper this project's "cycle time" and
+  "throughput" metrics (docs/improvement_plan.md section 3) are drawn from.
+
+## Collision avoidance (see docs/improvement_plan.md)
+
+- **van den Berg, Guy, Lin, Manocha. "Reciprocal n-Body Collision Avoidance."**
+  ISRR 2011 (the original ORCA paper).
+  Recommended as the local reactive safety layer beneath the global planner --
+  mature, well-understood, the most widely used reciprocal collision-avoidance
+  algorithm in both multi-robot systems and crowd simulation.
+
+- **"Forecast-Driven MPC for Decentralized Multi-Robot Collision Avoidance."**
+  2025. https://arxiv.org/abs/2508.08264
+  And **"CoRL-MPPI: Enhancing MPPI With Learnable Behaviours For Efficient And
+  Provably-Safe Multi-Robot Collision Avoidance."** 2026.
+  https://arxiv.org/abs/2511.09331
+  MPC/MPPI-based local layers, reporting better collision-free success rates than
+  reactive one-step methods in dense/high-speed scenarios at the cost of heavier
+  per-step computation. Flagged as the phase-2 stretch option in
+  docs/improvement_plan.md, contingent on ORCA's known failure modes actually
+  binding in this project's curved-lane setting.
+
 ## Notes on citation hygiene
 
 This bibliography lists titles, authors, venues, and links only — no reproduced abstracts or
