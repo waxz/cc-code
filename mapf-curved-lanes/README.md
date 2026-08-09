@@ -90,6 +90,19 @@ fuzz-testing (an initial no-corner-cutting attempt failed on 388/409 real
 scenarios), and an honest account of what separates this reproduction from
 GPPC-competitive preprocessed methods (JPS+BB, CPD).
 
+See [`docs/research_proposal_proving.md`](docs/research_proposal_proving.md) for
+a detailed research proposal on automated differential testing for MAPF/
+pathfinding implementations — the "Automated MAPF Proving" gap identified in
+Section 9.7 of the survey (Wang et al., arXiv:2505.19219). Working
+proof-of-concept in `src/proving/`, validated on a seeded bug with known ground
+truth (catches it 57.8% of the time, shrinks a 10×10 random instance down to a
+2×2 minimal counterexample automatically), then applied for real to this
+project's own single-agent planners (16,000 trials, 0 failures — reinforcing
+`docs/single_agent_benchmark.md`'s findings independently) and, for the first
+time, to the multi-agent solver's own soundness claims (1000 trials, 0
+failures — reported precisely as a soundness result, distinct from the
+already-known completeness gap it does not address).
+
 ## Quick start
 
 ```bash

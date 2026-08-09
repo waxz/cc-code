@@ -164,6 +164,24 @@ paper PDFs — clone/read them from these links directly.
   actually require beyond this project's current pure-search, no-preprocessing
   implementation.
 
+## Automated MAPF proving (see docs/research_proposal_proving.md)
+
+- **Wang, Xu, Zhang, Lin, Lu, Wang, Li. "Where Paths Collide..."** arXiv:2505.19219.
+  Already cited above for its taxonomy and evaluation-scale findings; Section 9.7
+  "Automated MAPF Proving" specifically motivates
+  `docs/research_proposal_proving.md` -- coupling ATP frameworks (Lean4) with
+  MAPF solvers to produce correctness certificates and counterexamples.
+
+- **Yang, Chen, Eide, Regehr. "Finding and Understanding Bugs in C Compilers."**
+  PLDI 2011. The Csmith paper; the methodological precedent for
+  `src/proving/` (random differential testing against multiple implementations
+  that should agree, applied here to pathfinding/MAPF rather than compilers).
+
+- **Zeller, Hildebrandt. "Simplifying and Isolating Failure-Inducing Input."**
+  IEEE TSE 2002. Delta-debugging; the algorithm `src/proving/shrink.py`
+  reproduces for reducing a random failing instance to a minimal
+  counterexample.
+
 ## Notes on citation hygiene
 
 This bibliography lists titles, authors, venues, and links only — no reproduced abstracts or
