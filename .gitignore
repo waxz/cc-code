@@ -31,5 +31,6 @@ commsys/nim/nimcache/
 *.swp
 
 # mapf-curved-lanes generated benchmark instances (not committed; only the
-# results/ report is)
-mapf-curved-lanes/data/
+# results/ report is). data/movingai/ holds real, small, committed benchmark
+# data (MovingAI maps/scens) and is intentionally NOT covered by this pattern.
+mapf-curved-lanes/data/instances/

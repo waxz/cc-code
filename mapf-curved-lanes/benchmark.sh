@@ -38,7 +38,25 @@ python3 -m pytest tests/ -v >> "$OUT" 2>&1
 echo '```' >> "$OUT"
 echo >> "$OUT"
 
-echo "== unit tests done, running instance generation across map sizes =="
+echo "== unit tests done, running single-agent benchmark (MovingAI dataset) =="
+{
+  echo "## Single-agent global planner benchmark (real MovingAI dataset)"
+  echo
+  echo "See \`docs/single_agent_benchmark.md\` for the full writeup -- this is the"
+  echo "foundation the multi-agent low-level planners' routing"
+  echo "(\`src/lane_graph/routing.py\`) is built on and was benchmarked against."
+  echo
+  echo '```'
+} >> "$OUT"
+python3 -m src.benchmark.single_agent_benchmark \
+  --map data/movingai/random-32-32-20.map \
+  --scen data/movingai/random-32-32-20-random-1.scen \
+  --out "$SCRIPT_DIR/results/single_agent_benchmark.csv" \
+  >> "$OUT" 2>&1
+echo '```' >> "$OUT"
+echo >> "$OUT"
+
+echo "== single-agent benchmark done, running instance generation across map sizes =="
 INSTANCE_DIR="$(mktemp -d)"
 
 {
@@ -88,15 +106,16 @@ Both solvers show a real completeness gap on these small/sparse instances, for t
 different reasons:
 
 - **`ours_full`**: the low-level planners (`src/planners/forklift_planner.py`,
-  `src/planners/quadruped_planner.py`) fix their route via Dijkstra once and, under
+  `src/planners/quadruped_planner.py`) fix their route via A* once (see
+  `docs/single_agent_benchmark.md` for the upgrade from plain Dijkstra) and, under
   a high-level constraint, only insert waits -- they never try an alternate route
   around a contested segment. Tracing a specific non-converging instance showed the
   search exploring hundreds of branches that all plateau at the exact same cost,
   which is the signature of a real incompleteness rather than "just needs a bigger
   expansion budget" (confirmed by re-running the same instance at 5000 expansions
   with no change). The fix is a low-level planner that treats a constraint as a
-  temporarily removed edge and re-runs Dijkstra, not just a wait-insertion pass --
-  that's the clear next implementation step, not something papered over here.
+  temporarily removed edge and re-runs the search, not just a wait-insertion pass
+  -- that's the clear next implementation step, not something papered over here.
 - **`grid_cbs`**: the grid-discretization translation (`instance_to_grid`) can snap
   multiple distinct lane-graph junctions to the same coarse grid cell on a small
   map, which can make an otherwise-solvable instance spuriously harder or

@@ -159,11 +159,37 @@ class ForkliftPlanner:
             seg = self.graph.segments[seg_id]
             return seg.length / self._segment_speed(seg, load_state)
 
-        path = shortest_path(self.graph, start_node, goal_node, cost, feasible)
+        path = shortest_path(
+            self.graph, start_node, goal_node, cost, feasible,
+            heuristic_fn=self._heuristic(goal_node, load_state),
+        )
         if path is None:
             return None  # no curvature-feasible route exists for this load state
 
         return self._simulate_timing(agent_id, start_node, path, load_state, constraints, start_time)
+
+    def _heuristic(self, goal_node: str, load_state: LoadState):
+        """Straight-line-distance-over-max-speed heuristic for A* (see
+        src/lane_graph/routing.py's module docstring for why this upgrade from
+        plain Dijkstra was made). Admissible because (a) every segment's length is
+        constructed to be >= the straight-line distance between its own two
+        endpoints (grid segments: exactly equal; curved shortcuts: deliberately
+        longer, see src/benchmark/generate_instances.py), so by the triangle
+        inequality any path's total length is >= straight-line start-to-goal
+        distance, and (b) this agent's speed on any segment is capped at
+        profile.max_speed(load_state) and never exceeds it (see
+        _segment_speed), so dividing by that flat max speed can only
+        under-estimate, never over-estimate, true remaining travel time.
+        """
+        goal_pos = self.graph.nodes[goal_node].position
+        max_speed = self.profile.max_speed(load_state)
+
+        def h(node_id: str) -> float:
+            node_pos = self.graph.nodes[node_id].position
+            dist = ((node_pos[0] - goal_pos[0]) ** 2 + (node_pos[1] - goal_pos[1]) ** 2) ** 0.5
+            return dist / max_speed
+
+        return h
 
     def _segment_speed(self, seg, load_state: LoadState) -> float:
         """Speed this agent may travel `seg` at, in this load state.

@@ -75,7 +75,18 @@ class QuadrupedPlanner:
         def cost(seg_id: str) -> float:
             return self.graph.segments[seg_id].length / speed
 
-        path = shortest_path(self.graph, start_node, goal_node, cost, feasible)
+        goal_pos = self.graph.nodes[goal_node].position
+
+        def heuristic(node_id: str) -> float:
+            # Same admissibility argument as ForkliftPlanner._heuristic: segment
+            # lengths are constructed >= straight-line endpoint distance, and this
+            # agent never exceeds `speed`, so straight_line_dist / speed can only
+            # under-estimate true remaining time.
+            node_pos = self.graph.nodes[node_id].position
+            dist = ((node_pos[0] - goal_pos[0]) ** 2 + (node_pos[1] - goal_pos[1]) ** 2) ** 0.5
+            return dist / speed
+
+        path = shortest_path(self.graph, start_node, goal_node, cost, feasible, heuristic_fn=heuristic)
         if path is None:
             return None
 

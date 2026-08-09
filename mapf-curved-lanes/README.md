@@ -77,6 +77,15 @@ global planner's wait-only incompleteness, and ORCA (with MPC/MPPI flagged as a
 contingent stretch option) for the currently-nonexistent local collision-avoidance
 layer.
 
+See [`docs/single_agent_benchmark.md`](docs/single_agent_benchmark.md) for a
+benchmark of the single-agent search underneath every low-level planner, against
+the real, standard MovingAI dataset (`data/movingai/`): A* (now the actual router
+in `src/lane_graph/routing.py`, replacing plain Dijkstra) expands 82.5% fewer nodes
+than Dijkstra at identical optimal cost on all 409 real test scenarios, verified
+against the dataset's own known-optimal path lengths, with the result propagated
+into the multi-agent solver and confirmed not to change any of the 24 pre-existing
+tests' outcomes.
+
 ## Quick start
 
 ```bash

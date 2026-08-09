@@ -136,6 +136,18 @@ paper PDFs — clone/read them from these links directly.
   docs/improvement_plan.md, contingent on ORCA's known failure modes actually
   binding in this project's curved-lane setting.
 
+## Single-agent pathfinding benchmark (see docs/single_agent_benchmark.md)
+
+- **Sturtevant, N. (2012). "Benchmarks for Grid-Based Pathfinding."** IEEE
+  Transactions on Computational Intelligence and AI in Games, 4(2), 144-148.
+  DOI: 10.1109/TCIAIG.2012.2197681. https://movingai.com/benchmarks/
+  The standard single-agent (and multi-agent) pathfinding benchmark dataset;
+  `data/movingai/` includes one map + scenario file from it (see
+  `data/movingai/PROVENANCE.md` for exact provenance and format). Used to
+  benchmark and upgrade this project's own `src/lane_graph/routing.py` from
+  Dijkstra to A*, verified against the dataset's known-optimal path lengths on
+  all 409 real test scenarios rather than assumed from algorithm theory alone.
+
 ## Notes on citation hygiene
 
 This bibliography lists titles, authors, venues, and links only — no reproduced abstracts or
