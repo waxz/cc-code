@@ -48,6 +48,8 @@ if(COMMSYS_BUILD_EXAMPLES)
   commsys_add_executable(test_typed_api bench/test_typed_api.cpp)
   commsys_add_executable(benchmark_report bench/benchmark_report.cpp)
   commsys_add_executable(bench_cpu_affinity bench/bench_cpu_affinity.cpp)
+  commsys_add_executable(commsys_bag tools/commsys_bag.cpp)
+  commsys_add_executable(csv_imu_publisher tools/csv_imu_publisher.cpp)
 
   # A single target that runs every smoke test in sequence and fails
   # the build if any of them does -- this is what

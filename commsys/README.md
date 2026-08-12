@@ -22,7 +22,8 @@ full benchmark comparison.
   [`cpp/node/API_GUIDE.md`](cpp/node/API_GUIDE.md) for how to actually
   use `Node` in new code -- typed messages, construction options, the
   event-loop-driving footgun that caused a real ~300ms latency bug,
-  and error handling.
+  and error handling. [`cpp/node/ROSBAG_GUIDE.md`](cpp/node/ROSBAG_GUIDE.md)
+  covers `commsys_bag`, a record/play/info CLI for topic sessions.
 - **`cpp/bench_reference/`** — standalone microbenchmarks (raw struct
   packing, FlatBuffers, ring buffer bandwidth, TCC JIT) used earlier
   to evaluate whether C++ was worth the port before committing to it.

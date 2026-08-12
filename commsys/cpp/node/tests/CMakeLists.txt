@@ -19,6 +19,7 @@ add_executable(commsys_tests
   test_discovery.cpp
   test_node.cpp
   test_ros_compat.cpp
+  test_rosbag.cpp
 )
 target_link_libraries(commsys_tests PRIVATE commsys_node Catch2::Catch2WithMain)
 
