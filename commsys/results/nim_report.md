@@ -1,6 +1,6 @@
 # commsys Nim benchmark report
 
-Generated: 2026-08-12 14:52:39 UTC
+Generated: 2026-08-14 16:44:43 UTC
 
 ## Hardware
 ```
@@ -25,25 +25,25 @@ Nim Compiler Version 1.6.14 [Linux: amd64]
 ## bench_ringbuffer.nim (cross-process shared memory)
 ```
 === Nim SPSC ring buffer, cross-process (fork), N=500000 ===
-  received 500000 messages in 0.0045s  (110777867. msg/s)
+  received 500000 messages in 0.0044s  (113065077. msg/s)
 ```
 
 ## bench_flatbuffers.nim (Nim calling the C++ FlatBuffers library)
 ```
 
 === Nim -> C++ FlatBuffers IMU batch (n=20 samples/msg) ===
-  build (Nim -> C++ FlatBufferBuilder) mean=    0.14us  p50=    0.14us  p99=    0.17us  size=    664B
-  read+sum (zero-copy, C++ accessors) mean=    0.04us  p50=    0.04us  p99=    0.04us  size=    664B
+  build (Nim -> C++ FlatBufferBuilder) mean=    0.13us  p50=    0.13us  p99=    0.15us  size=    664B
+  read+sum (zero-copy, C++ accessors) mean=    0.04us  p50=    0.04us  p99=    0.05us  size=    664B
 
 === Nim -> C++ FlatBuffers IMU batch (n=1 samples/msg) ===
-  build (Nim -> C++ FlatBufferBuilder) mean=    0.07us  p50=    0.06us  p99=    0.09us  size=     56B
+  build (Nim -> C++ FlatBufferBuilder) mean=    0.06us  p50=    0.06us  p99=    0.07us  size=     56B
   read+sum (zero-copy, C++ accessors) mean=    0.03us  p50=    0.02us  p99=    0.03us  size=     56B
 
 === Nim -> C++ FlatBuffers LaserScan (n=1080 points) ===
-  build (from seq[float32])        mean=    0.19us  p50=    0.19us  p99=    0.20us  size=   4392B
+  build (from seq[float32])        mean=    0.19us  p50=    0.19us  p99=    0.19us  size=   4392B
   read+sum (all elements)          mean=    0.91us  p50=    0.90us  p99=    0.91us  size=   4392B
 
 === Nim -> C++ FlatBuffers LaserScan (n=2000 points) ===
-  build (from seq[float32])        mean=    0.25us  p50=    0.25us  p99=    0.26us  size=   8072B
+  build (from seq[float32])        mean=    0.25us  p50=    0.24us  p99=    0.26us  size=   8072B
   read+sum (all elements)          mean=    1.66us  p50=    1.65us  p99=    1.65us  size=   8072B
 ```

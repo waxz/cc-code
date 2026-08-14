@@ -1,6 +1,6 @@
 # mapf-curved-lanes benchmark report
 
-Generated: 2026-08-12 14:53:22 UTC
+Generated: 2026-08-14 16:45:24 UTC
 
 ## Hardware
 ```
@@ -72,9 +72,9 @@ foundation the multi-agent low-level planners' routing
 
 ```
 === Single-agent benchmark summary (random-32-32-20, MovingAI) ===
-astar      n= 409  success_rate=100.00%  avg_nodes_expanded=    69.6  avg_runtime=0.270ms
-dijkstra   n= 409  success_rate=100.00%  avg_nodes_expanded=   397.0  avg_runtime=1.156ms
-jps        n= 409  self_consistent_rate=100.00%  avg_nodes_expanded=    25.0  avg_runtime=0.235ms
+astar      n= 409  success_rate=100.00%  avg_nodes_expanded=    69.6  avg_runtime=0.273ms
+dijkstra   n= 409  success_rate=100.00%  avg_nodes_expanded=   397.0  avg_runtime=1.169ms
+jps        n= 409  self_consistent_rate=100.00%  avg_nodes_expanded=    25.0  avg_runtime=0.245ms
 astar reduces total nodes expanded by 82.5% vs. dijkstra (162365 -> 28448), at identical solution cost (both optimal)
 jps reduces total nodes expanded by 64.1% vs. astar (28448 -> 10221) -- different cost model (corner-cutting allowed), so not a same-cost comparison: jps cost equals the benchmark's stricter no-cut optimal on 77/409 scenarios and is strictly lower (a corner shortcut exists) on 332/409
 
@@ -87,27 +87,27 @@ wrote /home/runner/work/cc-code/cc-code/mapf-curved-lanes/results/single_agent_b
 wrote small_medium_a10_m50-50_000
 wrote small_medium_a10_m50-50_001
 wrote small_medium_a10_m50-50_002
-  (small map, 10 agents, 3 instances: 0.121s)
+  (small map, 10 agents, 3 instances: 0.126s)
 wrote small_medium_a25_m50-50_000
 wrote small_medium_a25_m50-50_001
 wrote small_medium_a25_m50-50_002
-  (small map, 25 agents, 3 instances: 0.118s)
+  (small map, 25 agents, 3 instances: 0.128s)
 wrote medium_medium_a10_m50-50_000
 wrote medium_medium_a10_m50-50_001
 wrote medium_medium_a10_m50-50_002
-  (medium map, 10 agents, 3 instances: 0.123s)
+  (medium map, 10 agents, 3 instances: 0.132s)
 wrote medium_medium_a25_m50-50_000
 wrote medium_medium_a25_m50-50_001
 wrote medium_medium_a25_m50-50_002
-  (medium map, 25 agents, 3 instances: 0.123s)
+  (medium map, 25 agents, 3 instances: 0.134s)
 wrote large_medium_a10_m50-50_000
 wrote large_medium_a10_m50-50_001
 wrote large_medium_a10_m50-50_002
-  (large map, 10 agents, 3 instances: 0.174s)
+  (large map, 10 agents, 3 instances: 0.181s)
 wrote large_medium_a25_m50-50_000
 wrote large_medium_a25_m50-50_001
 wrote large_medium_a25_m50-50_002
-  (large map, 25 agents, 3 instances: 0.176s)
+  (large map, 25 agents, 3 instances: 0.179s)
 ```
 
 ## Solver comparison: ours_full vs. classical grid-CBS baseline
@@ -119,37 +119,37 @@ more compute than a CI job budget allows.
 
 ```
   small_medium_a2_000                 ours_full  success=True  cost=    26.5 runtime=0.0005s
-  small_medium_a2_000                 grid_cbs   success=False cost=       0 runtime=1.8441s
-  small_medium_a2_000                 pibt       success=False cost=       0 runtime=0.001s
+  small_medium_a2_000                 grid_cbs   success=False cost=       0 runtime=1.8477s
+  small_medium_a2_000                 pibt       success=False cost=       0 runtime=0.0009s
   small_medium_a2_001                 ours_full  success=True  cost=    35.0 runtime=0.0003s
   small_medium_a2_001                 grid_cbs   success=True  cost=      12 runtime=0.0001s
   small_medium_a2_001                 pibt       success=True  cost=      12 runtime=0.0001s
   small_medium_a2_002                 ours_full  success=True  cost=    46.0 runtime=0.0004s
   small_medium_a2_002                 grid_cbs   success=True  cost=      12 runtime=0.0001s
   small_medium_a2_002                 pibt       success=True  cost=      18 runtime=0.0001s
-  small_medium_a3_000                 ours_full  success=False cost=     0.0 runtime=1.2647s
-  small_medium_a3_000                 grid_cbs   success=False cost=       0 runtime=1.9973s
+  small_medium_a3_000                 ours_full  success=False cost=     0.0 runtime=1.2792s
+  small_medium_a3_000                 grid_cbs   success=False cost=       0 runtime=2.0431s
   small_medium_a3_000                 pibt       success=False cost=       0 runtime=0.0011s
   small_medium_a3_001                 ours_full  success=True  cost=    65.5 runtime=0.002s
-  small_medium_a3_001                 grid_cbs   success=False cost=       0 runtime=2.0821s
+  small_medium_a3_001                 grid_cbs   success=False cost=       0 runtime=2.1239s
   small_medium_a3_001                 pibt       success=False cost=       0 runtime=0.0011s
-  small_medium_a3_002                 ours_full  success=False cost=     0.0 runtime=0.5781s
-  small_medium_a3_002                 grid_cbs   success=False cost=       0 runtime=0.0382s
-  small_medium_a3_002                 pibt       success=False cost=       0 runtime=0.001s
-  small_medium_a4_000                 ours_full  success=False cost=     0.0 runtime=0.537s
-  small_medium_a4_000                 grid_cbs   success=False cost=       0 runtime=0.219s
+  small_medium_a3_002                 ours_full  success=False cost=     0.0 runtime=0.5825s
+  small_medium_a3_002                 grid_cbs   success=False cost=       0 runtime=0.0373s
+  small_medium_a3_002                 pibt       success=False cost=       0 runtime=0.0011s
+  small_medium_a4_000                 ours_full  success=False cost=     0.0 runtime=0.544s
+  small_medium_a4_000                 grid_cbs   success=False cost=       0 runtime=0.2174s
   small_medium_a4_000                 pibt       success=False cost=       0 runtime=0.0016s
-  small_medium_a4_001                 ours_full  success=True  cost=    63.0 runtime=0.0018s
-  small_medium_a4_001                 grid_cbs   success=False cost=       0 runtime=1.0958s
+  small_medium_a4_001                 ours_full  success=True  cost=    63.0 runtime=0.0017s
+  small_medium_a4_001                 grid_cbs   success=False cost=       0 runtime=1.1045s
   small_medium_a4_001                 pibt       success=False cost=       0 runtime=0.0012s
-  small_medium_a4_002                 ours_full  success=False cost=     0.0 runtime=0.4314s
-  small_medium_a4_002                 grid_cbs   success=False cost=       0 runtime=0.1302s
+  small_medium_a4_002                 ours_full  success=False cost=     0.0 runtime=0.4195s
+  small_medium_a4_002                 grid_cbs   success=False cost=       0 runtime=0.1272s
   small_medium_a4_002                 pibt       success=False cost=       0 runtime=0.0016s
 
 === Summary ===
-grid_cbs    n=   9  success_rate=22.22%  avg_runtime=0.8230s  avg_cost_when_solved=12.00  avg_agents_per_second=18569.5
-ours_full   n=   9  success_rate=55.56%  avg_runtime=0.3129s  avg_cost_when_solved=47.20  avg_agents_per_second=3725.7
-pibt        n=   9  success_rate=22.22%  avg_runtime=0.0010s  avg_cost_when_solved=15.00  avg_agents_per_second=30900.6
+grid_cbs    n=   9  success_rate=22.22%  avg_runtime=0.8335s  avg_cost_when_solved=12.00  avg_agents_per_second=17094.0
+ours_full   n=   9  success_rate=55.56%  avg_runtime=0.3145s  avg_cost_when_solved=47.20  avg_agents_per_second=3722.4
+pibt        n=   9  success_rate=22.22%  avg_runtime=0.0010s  avg_cost_when_solved=15.00  avg_agents_per_second=31324.0
 
 wrote /home/runner/work/cc-code/cc-code/mapf-curved-lanes/results/solver_benchmark.csv
 ```
