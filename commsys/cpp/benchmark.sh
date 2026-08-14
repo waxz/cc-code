@@ -79,4 +79,18 @@ rm -f /dev/shm/commsys_cpp_* 2>/dev/null || true
 "$BUILD_DIR/node/bench_cpu_affinity" >> "$OUT" 2>&1
 echo '```' >> "$OUT"
 
+echo >> "$OUT"
+echo "## Pub/sub workflow benchmark" >> "$OUT"
+echo >> "$OUT"
+echo "Realistic multi-topic workflow (imu=100Hz, encoder=50Hz, pose=20Hz)," >> "$OUT"
+echo "as opposed to the isolated single-topic sweeps and unpaced firehose" >> "$OUT"
+echo "stress tests above. Same workflow exists in Python for direct" >> "$OUT"
+echo "comparison -- see PUBSUB_WORKFLOW_COMPARISON.md." >> "$OUT"
+echo '```' >> "$OUT"
+rm -f /dev/shm/commsys_cpp_* 2>/dev/null || true
+"$BUILD_DIR/node/pubsub_workflow_benchmark" shm 5 >> "$OUT" 2>&1
+rm -f /dev/shm/commsys_cpp_* 2>/dev/null || true
+"$BUILD_DIR/node/pubsub_workflow_benchmark" udp 5 >> "$OUT" 2>&1
+echo '```' >> "$OUT"
+
 echo "== wrote $OUT =="

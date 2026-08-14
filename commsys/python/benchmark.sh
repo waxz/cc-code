@@ -40,4 +40,18 @@ echo "## Full benchmark sweep" >> "$OUT"
 echo >> "$OUT"
 cat "$SCRIPT_DIR/BENCHMARK_REPORT.md" >> "$OUT"
 
+echo >> "$OUT"
+echo "## Pub/sub workflow benchmark" >> "$OUT"
+echo >> "$OUT"
+echo "Realistic multi-topic workflow (imu=100Hz, encoder=50Hz, pose=20Hz)," >> "$OUT"
+echo "as opposed to the isolated single-topic sweeps and unpaced firehose" >> "$OUT"
+echo "stress tests above. Same workflow exists in C++ for direct comparison" >> "$OUT"
+echo "-- see cpp/PUBSUB_WORKFLOW_COMPARISON.md." >> "$OUT"
+echo '```' >> "$OUT"
+rm -f /dev/shm/commsys_* 2>/dev/null || true
+python3 "$SCRIPT_DIR/pubsub_workflow_benchmark.py" shm 5 >> "$OUT" 2>&1
+rm -f /dev/shm/commsys_* 2>/dev/null || true
+python3 "$SCRIPT_DIR/pubsub_workflow_benchmark.py" udp 5 >> "$OUT" 2>&1
+echo '```' >> "$OUT"
+
 echo "== wrote $OUT =="

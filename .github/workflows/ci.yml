@@ -68,6 +68,17 @@ jobs:
           rm -f /dev/shm/commsys_cpp_* || true
           cmake --build build --target run_smoke_tests
 
+      - name: pub/sub workflow benchmark (correctness check, short duration)
+        run: |
+          rm -f /dev/shm/commsys_cpp_* || true
+          commsys/cpp/build/node/pubsub_workflow_benchmark shm 2
+          rm -f /dev/shm/commsys_cpp_* || true
+          commsys/cpp/build/node/pubsub_workflow_benchmark udp 2
+          rm -f /dev/shm/commsys_* || true
+          python3 commsys/python/pubsub_workflow_benchmark.py shm 2
+          rm -f /dev/shm/commsys_* || true
+          python3 commsys/python/pubsub_workflow_benchmark.py udp 2
+
       - name: mapf-curved-lanes/build.sh
         run: mapf-curved-lanes/build.sh
 
