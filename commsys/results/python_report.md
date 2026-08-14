@@ -1,6 +1,6 @@
 # commsys Python benchmark report
 
-Generated: 2026-08-14 16:58:55 UTC
+Generated: 2026-08-14 17:09:38 UTC
 
 ## Hardware
 ```
@@ -91,7 +91,7 @@ tests/test_transport.py::test_unknown_peer_raises PASSED                 [ 97%]
 tests/test_transport.py::test_large_payload_is_chunked_and_reassembled PASSED [ 98%]
 tests/test_transport.py::test_large_payload_survives_loss_during_chunk_transfer PASSED [100%]
 
-============================= 67 passed in 24.67s ==============================
+============================= 67 passed in 24.85s ==============================
 ```
 
 
@@ -99,7 +99,7 @@ tests/test_transport.py::test_large_payload_survives_loss_during_chunk_transfer 
 
 # commsys benchmark report
 
-Generated: 2026-08-14 16:59:21
+Generated: 2026-08-14 17:10:04
 
 Each row is one independent multi-process run (real OS processes, not asyncio tasks). Duration 2.5s of steady-state traffic per scenario after a 0.8s discovery settle window.
 
@@ -109,60 +109,60 @@ Small (32B/sample) high-frequency messages, published one at a time (batch size 
 
 | rate (Hz) | transport | msgs recv | drops | bandwidth | mean latency | p99 latency |
 |---|---|---|---|---|---|---|
-| 500 | shm | 931 | 0 | 0.026 MB/s | 0.561ms | 1.096ms |
-| 1000 | shm | 1758 | 0 | 0.049 MB/s | 0.356ms | 0.875ms |
-| 2000 | shm | 1737 | 0 | 0.049 MB/s | 0.357ms | 0.849ms |
-| 5000 | shm | 1740 | 0 | 0.049 MB/s | 0.368ms | 0.861ms |
-| 10000 | shm | 1754 | 0 | 0.049 MB/s | 0.358ms | 1.032ms |
-| 500 | udp | 918 | 0 | 0.026 MB/s | 0.075ms | 0.101ms |
-| 1000 | udp | 1725 | 0 | 0.048 MB/s | 0.048ms | 0.080ms |
-| 2000 | udp | 1719 | 0 | 0.048 MB/s | 0.056ms | 0.085ms |
-| 5000 | udp | 1730 | 0 | 0.048 MB/s | 0.047ms | 0.121ms |
-| 10000 | udp | 1701 | 0 | 0.048 MB/s | 0.067ms | 0.102ms |
+| 500 | shm | 931 | 0 | 0.026 MB/s | 0.568ms | 1.102ms |
+| 1000 | shm | 1743 | 0 | 0.049 MB/s | 0.366ms | 0.882ms |
+| 2000 | shm | 1756 | 0 | 0.049 MB/s | 0.361ms | 0.882ms |
+| 5000 | shm | 1749 | 0 | 0.049 MB/s | 0.362ms | 0.876ms |
+| 10000 | shm | 1756 | 0 | 0.049 MB/s | 0.362ms | 0.870ms |
+| 500 | udp | 922 | 0 | 0.026 MB/s | 0.061ms | 0.108ms |
+| 1000 | udp | 1729 | 0 | 0.048 MB/s | 0.048ms | 0.089ms |
+| 2000 | udp | 1727 | 0 | 0.048 MB/s | 0.050ms | 0.085ms |
+| 5000 | udp | 1721 | 0 | 0.048 MB/s | 0.056ms | 0.087ms |
+| 10000 | udp | 1718 | 0 | 0.048 MB/s | 0.058ms | 0.087ms |
 
 ## 2. LaserScan publish-rate sweep (2000 points/scan, ~8KB)
 
 | rate (Hz) | transport | scans recv | drops | bandwidth | mean latency | p99 latency |
 |---|---|---|---|---|---|---|
-| 10 | shm | 20 | 0 | 0.081 MB/s | 0.571ms | 1.065ms |
-| 20 | shm | 40 | 0 | 0.161 MB/s | 0.590ms | 1.131ms |
-| 40 | shm | 80 | 0 | 0.323 MB/s | 0.579ms | 1.146ms |
-| 60 | shm | 116 | 0 | 0.468 MB/s | 0.550ms | 1.122ms |
-| 10 | udp | 20 | 0 | 0.081 MB/s | 0.222ms | 0.379ms |
-| 20 | udp | 40 | 0 | 0.161 MB/s | 0.222ms | 0.420ms |
-| 40 | udp | 79 | 0 | 0.319 MB/s | 0.209ms | 0.408ms |
-| 60 | udp | 115 | 0 | 0.464 MB/s | 0.208ms | 0.248ms |
+| 10 | shm | 20 | 0 | 0.081 MB/s | 0.571ms | 1.187ms |
+| 20 | shm | 40 | 0 | 0.161 MB/s | 0.589ms | 1.094ms |
+| 40 | shm | 80 | 0 | 0.323 MB/s | 0.607ms | 1.139ms |
+| 60 | shm | 116 | 0 | 0.468 MB/s | 0.566ms | 1.060ms |
+| 10 | udp | 20 | 0 | 0.081 MB/s | 0.249ms | 0.411ms |
+| 20 | udp | 40 | 0 | 0.161 MB/s | 0.224ms | 0.399ms |
+| 40 | udp | 79 | 0 | 0.319 MB/s | 0.217ms | 0.400ms |
+| 60 | udp | 115 | 0 | 0.464 MB/s | 0.214ms | 0.305ms |
 
 ## 3. LaserScan point-count sweep (fixed 20Hz)
 
 | points | payload size | transport | scans recv | drops | bandwidth | mean latency | p99 latency |
 |---|---|---|---|---|---|---|---|
-| 1080 | ~4.3KB | shm | 40 | 0 | 0.088 MB/s | 0.619ms | 1.204ms |
-| 2000 | ~7.9KB | shm | 40 | 0 | 0.161 MB/s | 0.635ms | 1.132ms |
-| 4000 | ~15.7KB | shm | 40 | 0 | 0.321 MB/s | 0.582ms | 1.056ms |
-| 8000 | ~31.3KB | shm | 40 | 0 | 0.641 MB/s | 0.654ms | 1.166ms |
-| 1080 | ~4.3KB | udp | 40 | 0 | 0.088 MB/s | 0.177ms | 0.375ms |
-| 2000 | ~7.9KB | udp | 40 | 0 | 0.161 MB/s | 0.210ms | 0.412ms |
-| 4000 | ~15.7KB | udp | 40 | 0 | 0.321 MB/s | 0.291ms | 0.535ms |
-| 8000 | ~31.3KB | udp | 40 | 0 | 0.641 MB/s | 0.433ms | 0.704ms |
+| 1080 | ~4.3KB | shm | 40 | 0 | 0.088 MB/s | 0.597ms | 1.123ms |
+| 2000 | ~7.9KB | shm | 40 | 0 | 0.161 MB/s | 0.573ms | 1.159ms |
+| 4000 | ~15.7KB | shm | 40 | 0 | 0.321 MB/s | 0.700ms | 1.126ms |
+| 8000 | ~31.3KB | shm | 40 | 0 | 0.641 MB/s | 0.579ms | 1.118ms |
+| 1080 | ~4.3KB | udp | 40 | 0 | 0.088 MB/s | 0.194ms | 0.369ms |
+| 2000 | ~7.9KB | udp | 40 | 0 | 0.161 MB/s | 0.252ms | 0.411ms |
+| 4000 | ~15.7KB | udp | 40 | 0 | 0.321 MB/s | 0.300ms | 0.468ms |
+| 8000 | ~31.3KB | udp | 40 | 0 | 0.641 MB/s | 0.563ms | 0.700ms |
 
 ## 4. Fan-out: one IMU publisher (2kHz) -> N subscribers, shared memory
 
 | N subscribers | min/max msgs recv | total drops | mean latency | p99 latency |
 |---|---|---|---|---|
-| 1 | 2194 / 2194 | 0 | 0.357ms | 0.883ms |
-| 2 | 2143 / 2143 | 0 | 0.357ms | 0.861ms |
-| 4 | 2082 / 2082 | 0 | 0.129ms | 1.084ms |
-| 8 | 1816 / 1816 | 0 | 0.988ms | 5.838ms |
+| 1 | 2203 / 2203 | 0 | 0.363ms | 0.881ms |
+| 2 | 2142 / 2142 | 0 | 0.354ms | 0.845ms |
+| 4 | 2075 / 2075 | 0 | 0.372ms | 0.887ms |
+| 8 | 1691 / 1691 | 0 | 0.879ms | 5.526ms |
 
 ## 5. Fan-in: N IMU publishers (2kHz each) -> one subscriber, shared memory
 
 | N publishers | aggregate msgs recv | total drops | mean latency | p99 latency |
 |---|---|---|---|---|
-| 1 | 2202 | 0 | 0.369ms | 0.893ms |
-| 2 | 4381 | 0 | 0.488ms | 1.738ms |
-| 4 | 8640 | 0 | 0.026ms | 0.058ms |
-| 8 | 17052 | 0 | 0.037ms | 0.079ms |
+| 1 | 2196 | 0 | 0.358ms | 0.869ms |
+| 2 | 4388 | 0 | 0.512ms | 1.517ms |
+| 4 | 8666 | 0 | 0.023ms | 0.054ms |
+| 8 | 17037 | 0 | 0.036ms | 0.075ms |
 
 ## 6. Maximum throughput (publisher does not pace itself)
 
@@ -170,10 +170,10 @@ Section 1 above shows received rate plateauing around ~850-900 msg/s regardless 
 
 | payload | transport | msgs recv | drops | bandwidth | mean latency | p99 latency |
 |---|---|---|---|---|---|---|
-| imu (32B) | shm | 79064 | 0 | 2.214 MB/s | 0.010ms | 0.022ms |
-| imu (32B) | udp | 45345 | 0 | 1.270 MB/s | 0.062ms | 0.345ms |
-| scan (~8KB) | shm | 29981 | 0 | 121.003 MB/s | 0.014ms | 0.030ms |
-| scan (~8KB) | udp | 15869 | 0 | 64.047 MB/s | 0.096ms | 0.173ms |
+| imu (32B) | shm | 79276 | 0 | 2.220 MB/s | 0.010ms | 0.022ms |
+| imu (32B) | udp | 49652 | 0 | 1.390 MB/s | 1.657ms | 12.114ms |
+| scan (~8KB) | shm | 30470 | 0 | 122.977 MB/s | 0.014ms | 0.032ms |
+| scan (~8KB) | udp | 15753 | 0 | 63.579 MB/s | 0.097ms | 0.175ms |
 
 ## Analysis & limitations
 
@@ -202,9 +202,9 @@ realistic robot sensor rates (imu=100Hz, encoder=50Hz, pose=20Hz).
   warnings.warn('resource_tracker: There appear to be %d '
 | topic      |   sent | recv'd |  drops | mean(ms) |  p99(ms) |  max(ms) |
 |------------|--------|--------|--------|----------|----------|----------|
-| imu        |    500 |    500 |      0 |   0.5386 |   1.0994 |   1.1233 |
-| encoder    |    250 |    250 |      0 |   0.5410 |   1.0962 |   1.1091 |
-| pose       |    100 |    100 |      0 |   0.5528 |   1.0948 |   1.0948 |
+| imu        |    500 |    500 |      0 |   0.5754 |   1.0921 |   1.1045 |
+| encoder    |    250 |    250 |      0 |   0.5475 |   1.0860 |   1.0969 |
+| pose       |    100 |    100 |      0 |   0.5774 |   1.0935 |   1.0935 |
 # commsys Python pub/sub workflow benchmark (transport=udp, duration=5.0s)
 
 Workflow: one publisher, one subscriber, three concurrent topics at
@@ -214,7 +214,7 @@ realistic robot sensor rates (imu=100Hz, encoder=50Hz, pose=20Hz).
   warnings.warn('resource_tracker: There appear to be %d '
 | topic      |   sent | recv'd |  drops | mean(ms) |  p99(ms) |  max(ms) |
 |------------|--------|--------|--------|----------|----------|----------|
-| imu        |    500 |    500 |      0 |   0.0801 |   0.1088 |   0.3120 |
-| encoder    |    250 |    250 |      0 |   0.1115 |   0.1893 |   0.3271 |
-| pose       |    100 |    100 |      0 |   0.1294 |   0.3549 |   0.3549 |
+| imu        |    500 |    500 |      0 |   0.0859 |   0.1116 |   0.2869 |
+| encoder    |    250 |    250 |      0 |   0.1131 |   0.2130 |   0.2696 |
+| pose       |    100 |    100 |      0 |   0.1288 |   0.2907 |   0.2907 |
 ```
