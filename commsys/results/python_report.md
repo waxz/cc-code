@@ -1,12 +1,12 @@
 # commsys Python benchmark report
 
-Generated: 2026-08-14 16:39:26 UTC
+Generated: 2026-08-14 16:58:55 UTC
 
 ## Hardware
 ```
 vCPUs: 4
                total        used        free      shared  buff/cache   available
-Mem:            15Gi       1.2Gi        10Gi        46Mi       4.6Gi        14Gi
+Mem:            15Gi       1.1Gi        11Gi        44Mi       3.0Gi        14Gi
 Swap:          3.0Gi          0B       3.0Gi
 Python 3.12.13
 ```
@@ -91,7 +91,7 @@ tests/test_transport.py::test_unknown_peer_raises PASSED                 [ 97%]
 tests/test_transport.py::test_large_payload_is_chunked_and_reassembled PASSED [ 98%]
 tests/test_transport.py::test_large_payload_survives_loss_during_chunk_transfer PASSED [100%]
 
-============================= 67 passed in 24.53s ==============================
+============================= 67 passed in 24.67s ==============================
 ```
 
 
@@ -99,7 +99,7 @@ tests/test_transport.py::test_large_payload_survives_loss_during_chunk_transfer 
 
 # commsys benchmark report
 
-Generated: 2026-08-14 16:39:51
+Generated: 2026-08-14 16:59:21
 
 Each row is one independent multi-process run (real OS processes, not asyncio tasks). Duration 2.5s of steady-state traffic per scenario after a 0.8s discovery settle window.
 
@@ -109,60 +109,60 @@ Small (32B/sample) high-frequency messages, published one at a time (batch size 
 
 | rate (Hz) | transport | msgs recv | drops | bandwidth | mean latency | p99 latency |
 |---|---|---|---|---|---|---|
-| 500 | shm | 931 | 0 | 0.026 MB/s | 0.552ms | 1.077ms |
-| 1000 | shm | 1806 | 0 | 0.051 MB/s | 0.299ms | 0.965ms |
-| 2000 | shm | 1809 | 0 | 0.051 MB/s | 0.297ms | 0.685ms |
-| 5000 | shm | 1810 | 0 | 0.051 MB/s | 0.294ms | 0.633ms |
-| 10000 | shm | 1827 | 0 | 0.051 MB/s | 0.292ms | 0.619ms |
-| 500 | udp | 920 | 0 | 0.026 MB/s | 0.070ms | 0.102ms |
-| 1000 | udp | 1803 | 0 | 0.050 MB/s | 0.030ms | 0.062ms |
-| 2000 | udp | 1797 | 0 | 0.050 MB/s | 0.034ms | 0.059ms |
-| 5000 | udp | 1804 | 0 | 0.051 MB/s | 0.029ms | 0.065ms |
-| 10000 | udp | 1807 | 0 | 0.051 MB/s | 0.027ms | 0.068ms |
+| 500 | shm | 931 | 0 | 0.026 MB/s | 0.561ms | 1.096ms |
+| 1000 | shm | 1758 | 0 | 0.049 MB/s | 0.356ms | 0.875ms |
+| 2000 | shm | 1737 | 0 | 0.049 MB/s | 0.357ms | 0.849ms |
+| 5000 | shm | 1740 | 0 | 0.049 MB/s | 0.368ms | 0.861ms |
+| 10000 | shm | 1754 | 0 | 0.049 MB/s | 0.358ms | 1.032ms |
+| 500 | udp | 918 | 0 | 0.026 MB/s | 0.075ms | 0.101ms |
+| 1000 | udp | 1725 | 0 | 0.048 MB/s | 0.048ms | 0.080ms |
+| 2000 | udp | 1719 | 0 | 0.048 MB/s | 0.056ms | 0.085ms |
+| 5000 | udp | 1730 | 0 | 0.048 MB/s | 0.047ms | 0.121ms |
+| 10000 | udp | 1701 | 0 | 0.048 MB/s | 0.067ms | 0.102ms |
 
 ## 2. LaserScan publish-rate sweep (2000 points/scan, ~8KB)
 
 | rate (Hz) | transport | scans recv | drops | bandwidth | mean latency | p99 latency |
 |---|---|---|---|---|---|---|
-| 10 | shm | 20 | 0 | 0.081 MB/s | 0.635ms | 1.149ms |
-| 20 | shm | 40 | 0 | 0.161 MB/s | 0.579ms | 1.064ms |
-| 40 | shm | 79 | 0 | 0.319 MB/s | 0.590ms | 1.116ms |
-| 60 | shm | 116 | 0 | 0.468 MB/s | 0.582ms | 1.103ms |
-| 10 | udp | 20 | 0 | 0.081 MB/s | 0.227ms | 0.351ms |
-| 20 | udp | 40 | 0 | 0.161 MB/s | 0.197ms | 0.332ms |
-| 40 | udp | 79 | 0 | 0.319 MB/s | 0.178ms | 0.314ms |
-| 60 | udp | 116 | 0 | 0.468 MB/s | 0.161ms | 0.225ms |
+| 10 | shm | 20 | 0 | 0.081 MB/s | 0.571ms | 1.065ms |
+| 20 | shm | 40 | 0 | 0.161 MB/s | 0.590ms | 1.131ms |
+| 40 | shm | 80 | 0 | 0.323 MB/s | 0.579ms | 1.146ms |
+| 60 | shm | 116 | 0 | 0.468 MB/s | 0.550ms | 1.122ms |
+| 10 | udp | 20 | 0 | 0.081 MB/s | 0.222ms | 0.379ms |
+| 20 | udp | 40 | 0 | 0.161 MB/s | 0.222ms | 0.420ms |
+| 40 | udp | 79 | 0 | 0.319 MB/s | 0.209ms | 0.408ms |
+| 60 | udp | 115 | 0 | 0.464 MB/s | 0.208ms | 0.248ms |
 
 ## 3. LaserScan point-count sweep (fixed 20Hz)
 
 | points | payload size | transport | scans recv | drops | bandwidth | mean latency | p99 latency |
 |---|---|---|---|---|---|---|---|
-| 1080 | ~4.3KB | shm | 40 | 0 | 0.088 MB/s | 0.632ms | 1.112ms |
-| 2000 | ~7.9KB | shm | 40 | 0 | 0.161 MB/s | 0.687ms | 1.179ms |
-| 4000 | ~15.7KB | shm | 40 | 0 | 0.321 MB/s | 0.530ms | 1.112ms |
-| 8000 | ~31.3KB | shm | 40 | 0 | 0.641 MB/s | 0.630ms | 1.123ms |
-| 1080 | ~4.3KB | udp | 40 | 0 | 0.088 MB/s | 0.177ms | 0.285ms |
-| 2000 | ~7.9KB | udp | 40 | 0 | 0.161 MB/s | 0.199ms | 0.333ms |
-| 4000 | ~15.7KB | udp | 40 | 0 | 0.321 MB/s | 0.253ms | 0.443ms |
-| 8000 | ~31.3KB | udp | 40 | 0 | 0.641 MB/s | 0.361ms | 0.582ms |
+| 1080 | ~4.3KB | shm | 40 | 0 | 0.088 MB/s | 0.619ms | 1.204ms |
+| 2000 | ~7.9KB | shm | 40 | 0 | 0.161 MB/s | 0.635ms | 1.132ms |
+| 4000 | ~15.7KB | shm | 40 | 0 | 0.321 MB/s | 0.582ms | 1.056ms |
+| 8000 | ~31.3KB | shm | 40 | 0 | 0.641 MB/s | 0.654ms | 1.166ms |
+| 1080 | ~4.3KB | udp | 40 | 0 | 0.088 MB/s | 0.177ms | 0.375ms |
+| 2000 | ~7.9KB | udp | 40 | 0 | 0.161 MB/s | 0.210ms | 0.412ms |
+| 4000 | ~15.7KB | udp | 40 | 0 | 0.321 MB/s | 0.291ms | 0.535ms |
+| 8000 | ~31.3KB | udp | 40 | 0 | 0.641 MB/s | 0.433ms | 0.704ms |
 
 ## 4. Fan-out: one IMU publisher (2kHz) -> N subscribers, shared memory
 
 | N subscribers | min/max msgs recv | total drops | mean latency | p99 latency |
 |---|---|---|---|---|
-| 1 | 2284 / 2284 | 0 | 0.294ms | 1.047ms |
-| 2 | 2243 / 2243 | 0 | 0.386ms | 1.087ms |
-| 4 | 2169 / 2169 | 0 | 0.412ms | 1.067ms |
-| 8 | 1771 / 1771 | 0 | 0.613ms | 2.201ms |
+| 1 | 2194 / 2194 | 0 | 0.357ms | 0.883ms |
+| 2 | 2143 / 2143 | 0 | 0.357ms | 0.861ms |
+| 4 | 2082 / 2082 | 0 | 0.129ms | 1.084ms |
+| 8 | 1816 / 1816 | 0 | 0.988ms | 5.838ms |
 
 ## 5. Fan-in: N IMU publishers (2kHz each) -> one subscriber, shared memory
 
 | N publishers | aggregate msgs recv | total drops | mean latency | p99 latency |
 |---|---|---|---|---|
-| 1 | 2285 | 0 | 0.293ms | 1.055ms |
-| 2 | 4525 | 0 | 0.477ms | 1.266ms |
-| 4 | 8938 | 0 | 0.019ms | 0.042ms |
-| 8 | 17858 | 0 | 0.023ms | 0.046ms |
+| 1 | 2202 | 0 | 0.369ms | 0.893ms |
+| 2 | 4381 | 0 | 0.488ms | 1.738ms |
+| 4 | 8640 | 0 | 0.026ms | 0.058ms |
+| 8 | 17052 | 0 | 0.037ms | 0.079ms |
 
 ## 6. Maximum throughput (publisher does not pace itself)
 
@@ -170,10 +170,10 @@ Section 1 above shows received rate plateauing around ~850-900 msg/s regardless 
 
 | payload | transport | msgs recv | drops | bandwidth | mean latency | p99 latency |
 |---|---|---|---|---|---|---|
-| imu (32B) | shm | 119202 | 0 | 3.338 MB/s | 0.006ms | 0.012ms |
-| imu (32B) | udp | 87767 | 0 | 2.457 MB/s | 1.662ms | 19.135ms |
-| scan (~8KB) | shm | 49500 | 0 | 199.782 MB/s | 0.009ms | 0.018ms |
-| scan (~8KB) | udp | 22904 | 1045 | 92.441 MB/s | 0.978ms | 18.602ms |
+| imu (32B) | shm | 79064 | 0 | 2.214 MB/s | 0.010ms | 0.022ms |
+| imu (32B) | udp | 45345 | 0 | 1.270 MB/s | 0.062ms | 0.345ms |
+| scan (~8KB) | shm | 29981 | 0 | 121.003 MB/s | 0.014ms | 0.030ms |
+| scan (~8KB) | udp | 15869 | 0 | 64.047 MB/s | 0.096ms | 0.173ms |
 
 ## Analysis & limitations
 
@@ -185,3 +185,36 @@ Section 1 above shows received rate plateauing around ~850-900 msg/s regardless 
 
 **A real correctness bug was found and fixed while building this report, not before it.** The original per-topic drop counter used one running sequence number regardless of which publisher a message came from. With multiple publishers on one topic (section 5), their independently-numbered sequences interleave, and the counter saw that interleaving as massive gaps: 18,084 false "drops" at 4 publishers on the first run of this exact sweep. Fixed by adding the sender's node id to the wire envelope and tracking last-seen sequence per (topic, sender) instead of per topic. Section 5 above reflects the fix -- zero drops at every fan-in level, which is the correct answer since nothing was actually being dropped.
 
+
+## Pub/sub workflow benchmark
+
+Realistic multi-topic workflow (imu=100Hz, encoder=50Hz, pose=20Hz),
+as opposed to the isolated single-topic sweeps and unpaced firehose
+stress tests above. Same workflow exists in C++ for direct comparison
+-- see cpp/PUBSUB_WORKFLOW_COMPARISON.md.
+```
+# commsys Python pub/sub workflow benchmark (transport=shm, duration=5.0s)
+
+Workflow: one publisher, one subscriber, three concurrent topics at
+realistic robot sensor rates (imu=100Hz, encoder=50Hz, pose=20Hz).
+
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+| topic      |   sent | recv'd |  drops | mean(ms) |  p99(ms) |  max(ms) |
+|------------|--------|--------|--------|----------|----------|----------|
+| imu        |    500 |    500 |      0 |   0.5386 |   1.0994 |   1.1233 |
+| encoder    |    250 |    250 |      0 |   0.5410 |   1.0962 |   1.1091 |
+| pose       |    100 |    100 |      0 |   0.5528 |   1.0948 |   1.0948 |
+# commsys Python pub/sub workflow benchmark (transport=udp, duration=5.0s)
+
+Workflow: one publisher, one subscriber, three concurrent topics at
+realistic robot sensor rates (imu=100Hz, encoder=50Hz, pose=20Hz).
+
+/opt/hostedtoolcache/Python/3.12.13/x64/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked shared_memory objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '
+| topic      |   sent | recv'd |  drops | mean(ms) |  p99(ms) |  max(ms) |
+|------------|--------|--------|--------|----------|----------|----------|
+| imu        |    500 |    500 |      0 |   0.0801 |   0.1088 |   0.3120 |
+| encoder    |    250 |    250 |      0 |   0.1115 |   0.1893 |   0.3271 |
+| pose       |    100 |    100 |      0 |   0.1294 |   0.3549 |   0.3549 |
+```
