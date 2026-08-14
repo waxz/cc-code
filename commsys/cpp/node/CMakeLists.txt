@@ -48,7 +48,18 @@ if(COMMSYS_BUILD_EXAMPLES)
   commsys_add_executable(test_typed_api bench/test_typed_api.cpp)
   commsys_add_executable(benchmark_report bench/benchmark_report.cpp)
   commsys_add_executable(bench_cpu_affinity bench/bench_cpu_affinity.cpp)
-  commsys_add_executable(commsys_bag tools/commsys_bag.cpp)
+  find_library(BZ2_LIBRARY bz2)
+  find_path(BZ2_INCLUDE_DIR bzlib.h)
+  if(BZ2_LIBRARY AND BZ2_INCLUDE_DIR)
+    commsys_add_executable(commsys_bag tools/commsys_bag.cpp)
+    target_include_directories(commsys_bag PRIVATE ${BZ2_INCLUDE_DIR})
+    target_link_libraries(commsys_bag PRIVATE ${BZ2_LIBRARY})
+    message(STATUS "libbz2 found -- building commsys_bag (with import-ros1 support for real ROS1 bags)")
+  else()
+    message(STATUS "libbz2 not found (apt install libbz2-dev) -- skipping commsys_bag "
+                    "(ros1_bag_reader.hpp requires it for bz2-compressed ROS1 bags, "
+                    "which is rosbag record's default)")
+  endif()
   commsys_add_executable(csv_imu_publisher tools/csv_imu_publisher.cpp)
 
   # A single target that runs every smoke test in sequence and fails

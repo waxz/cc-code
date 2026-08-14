@@ -23,6 +23,16 @@ add_executable(commsys_tests
 )
 target_link_libraries(commsys_tests PRIVATE commsys_node Catch2::Catch2WithMain)
 
+find_library(BZ2_LIBRARY bz2)
+find_path(BZ2_INCLUDE_DIR bzlib.h)
+if(BZ2_LIBRARY AND BZ2_INCLUDE_DIR)
+  target_sources(commsys_tests PRIVATE test_ros1_bag.cpp)
+  target_include_directories(commsys_tests PRIVATE ${BZ2_INCLUDE_DIR})
+  target_link_libraries(commsys_tests PRIVATE ${BZ2_LIBRARY})
+else()
+  message(STATUS "libbz2 not found -- skipping test_ros1_bag.cpp (real ROS1 bag parser tests)")
+endif()
+
 include(CTest)
 include(Catch)
 # catch_discover_tests runs the binary at build time to enumerate

@@ -30,7 +30,7 @@ jobs:
       - name: Install system dependencies (cmake, flatbuffers, catch2)
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq cmake flatbuffers-compiler libflatbuffers-dev catch2
+          sudo apt-get install -y -qq cmake flatbuffers-compiler libflatbuffers-dev catch2 libbz2-dev
 
       - name: Report runner hardware
         run: |
@@ -96,7 +96,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq cmake flatbuffers-compiler libflatbuffers-dev catch2 nim
+          sudo apt-get install -y -qq cmake flatbuffers-compiler libflatbuffers-dev catch2 libbz2-dev nim
 
       - name: python/build.sh && python/benchmark.sh
         run: |

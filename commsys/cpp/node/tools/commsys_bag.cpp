@@ -14,6 +14,7 @@
 //   commsys_bag info FILE
 #include "../include/node.hpp"
 #include "../include/rosbag.hpp"
+#include "../include/ros1_bag_reader.hpp"
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -21,6 +22,7 @@
 #include <csignal>
 #include <cstdio>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -44,7 +46,10 @@ void print_usage() {
         "                      [--duration SECONDS] TOPIC [TOPIC ...]\n"
         "  commsys_bag play FILE [--registry NAME] [--transport shm|udp]\n"
         "                   [--rate R] [--loop]\n"
-        "  commsys_bag info FILE\n");
+        "  commsys_bag info FILE\n"
+        "  commsys_bag import-ros1 FILE -o OUTPUT\n"
+        "                   (converts a real ROS1 .bag file into commsys's\n"
+        "                    own format; message bytes pass through raw)\n");
 }
 
 std::string human_duration(double seconds) {
@@ -198,6 +203,61 @@ int cmd_info(const std::vector<std::string>& args) {
     return 0;
 }
 
+int cmd_import_ros1(const std::vector<std::string>& args) {
+    std::string in_path, out_path;
+    for (size_t i = 0; i < args.size(); i++) {
+        const std::string& a = args[i];
+        if (a == "-o" && i + 1 < args.size()) out_path = args[++i];
+        else if (!a.empty() && a[0] != '-') in_path = a;
+        else { fprintf(stderr, "unrecognized argument: %s\n", a.c_str()); return 2; }
+    }
+    if (in_path.empty() || out_path.empty()) {
+        fprintf(stderr, "import-ros1 requires an input FILE and -o OUTPUT\n");
+        print_usage();
+        return 2;
+    }
+
+    // Reads a real ROS1 .bag file (see ros1_bag_reader.hpp) and
+    // converts it into commsys's own CBAG format. Message bodies are
+    // carried through as opaque raw bytes, unchanged -- this tool
+    // doesn't need to understand ROS's field-level serialization to
+    // move a message from one container format to the other, the
+    // same reasoning commsys_bag record already uses for topics it
+    // doesn't know the type of. What DOES get used from the ROS1 bag:
+    // real topic names and real type strings (e.g. "sensor_msgs/Imu"),
+    // so `commsys_bag info` on the converted file shows accurate
+    // types instead of "unknown".
+    commsys::ros1bag::Ros1BagReader reader(in_path);
+    rosbag::BagWriter writer(out_path);
+    std::map<uint32_t, std::string> conn_topic;
+    std::set<uint32_t> seen_conns;  // ROS1 bags legitimately duplicate
+                                     // connection records (once inside
+                                     // the chunk, once in the index
+                                     // section) -- only report each once.
+    uint64_t msg_count = 0;
+
+    reader.for_each_record(
+        [&](const commsys::ros1bag::Connection& c) {
+            conn_topic[c.conn_id] = c.topic;
+            if (seen_conns.insert(c.conn_id).second) {
+                fprintf(stderr, "[commsys_bag import-ros1] connection: %s (%s)\n",
+                        c.topic.c_str(), c.type.c_str());
+                writer.add_connection(c.topic, c.type);
+            }
+        },
+        [&](const commsys::ros1bag::Message& m) {
+            auto it = conn_topic.find(m.conn_id);
+            if (it == conn_topic.end()) return;  // message before its connection record; shouldn't happen in a valid bag
+            writer.write_message(it->second, "", m.timestamp_ns, m.data.data(), (uint32_t)m.data.size());
+            msg_count++;
+        });
+
+    writer.close();
+    fprintf(stderr, "[commsys_bag import-ros1] converted %llu message(s) from %s to %s\n",
+            (unsigned long long)msg_count, in_path.c_str(), out_path.c_str());
+    return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -209,6 +269,7 @@ int main(int argc, char** argv) {
         if (cmd == "record") return cmd_record(args);
         if (cmd == "play") return cmd_play(args);
         if (cmd == "info") return cmd_info(args);
+        if (cmd == "import-ros1") return cmd_import_ros1(args);
         fprintf(stderr, "unknown command: %s\n", cmd.c_str());
         print_usage();
         return 2;
